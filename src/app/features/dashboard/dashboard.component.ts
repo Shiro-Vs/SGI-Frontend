@@ -16,20 +16,93 @@ import { AuthService } from '../../services/auth.service';
           <span class="badge">v1.0</span>
         </div>
         <nav class="nav-menu">
+          <!-- Todos ven Panel Principal -->
           <a routerLink="/dashboard" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" class="nav-item">
             <span class="icon">📊</span>
             Panel Principal
           </a>
-          <a routerLink="/dashboard/usuarios" routerLinkActive="active" class="nav-item">
-            <span class="icon">👥</span>
-            Gestión de Usuarios
-          </a>
+
+          <!-- ADMIN -->
+          <ng-container *ngIf="role === 'ADMIN'">
+            <a routerLink="/dashboard/usuarios" routerLinkActive="active" class="nav-item">
+              <span class="icon">👥</span>
+              Usuarios
+            </a>
+            <a routerLink="/dashboard/sucursales" routerLinkActive="active" class="nav-item">
+              <span class="icon">🏢</span>
+              Sucursales
+            </a>
+            <a routerLink="/dashboard/categorias" routerLinkActive="active" class="nav-item">
+              <span class="icon">🏷️</span>
+              Categorías
+            </a>
+            <a routerLink="/dashboard/productos" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" class="nav-item">
+              <span class="icon">📦</span>
+              Productos
+            </a>
+            <a routerLink="/dashboard/movimientos/historial" routerLinkActive="active" class="nav-item">
+              <span class="icon">🔄</span>
+              Movimientos
+            </a>
+            <a routerLink="/dashboard/productos/bajo-stock" routerLinkActive="active" class="nav-item">
+              <span class="icon">⚠️</span>
+              Alertas (Stock Bajo)
+            </a>
+          </ng-container>
+
+          <!-- JEFE_ALMACEN -->
+          <ng-container *ngIf="role === 'JEFE_ALMACEN'">
+            <a routerLink="/dashboard/productos" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" class="nav-item">
+              <span class="icon">📦</span>
+              Productos
+            </a>
+            <a routerLink="/dashboard/productos/bajo-stock" routerLinkActive="active" class="nav-item">
+              <span class="icon">⚠️</span>
+              Stock Bajo
+            </a>
+            <a routerLink="/dashboard/movimientos/entrada" routerLinkActive="active" class="nav-item">
+              <span class="icon">📥</span>
+              Entradas
+            </a>
+            <a routerLink="/dashboard/movimientos/transferencia" routerLinkActive="active" class="nav-item">
+              <span class="icon">🚚</span>
+              Transferencias
+            </a>
+          </ng-container>
+
+          <!-- VENDEDOR -->
+          <ng-container *ngIf="role === 'VENDEDOR'">
+            <a routerLink="/dashboard/productos" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" class="nav-item">
+              <span class="icon">📦</span>
+              Productos
+            </a>
+            <a routerLink="/dashboard/movimientos/salida" routerLinkActive="active" class="nav-item">
+              <span class="icon">📤</span>
+              Registrar Salida
+            </a>
+          </ng-container>
+
+          <!-- GERENTE -->
+          <ng-container *ngIf="role === 'GERENTE'">
+            <a routerLink="/dashboard/productos" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" class="nav-item">
+              <span class="icon">📦</span>
+              Ver Productos
+            </a>
+            <a routerLink="/dashboard/productos/bajo-stock" routerLinkActive="active" class="nav-item">
+              <span class="icon">⚠️</span>
+              Stock Bajo
+            </a>
+            <a routerLink="/dashboard/movimientos/historial" routerLinkActive="active" class="nav-item">
+              <span class="icon">🔄</span>
+              Historial Movimientos
+            </a>
+          </ng-container>
         </nav>
         <div class="user-profile">
-          <div class="avatar">U</div>
+          <div class="avatar">{{ currentUser?.nombre?.charAt(0) || 'U' }}</div>
           <div class="user-info">
-            <span class="username">Usuario SGI</span>
-            <span class="role">Administrador</span>
+            <span class="username">{{ currentUser?.nombre || 'Usuario SGI' }}</span>
+            <span class="role">{{ getRoleLabel(role) }}</span>
           </div>
           <button (click)="logout()" class="logout-btn" title="Cerrar sesión">
             🚪
@@ -53,7 +126,7 @@ import { AuthService } from '../../services/auth.service';
           </div>
         </header>
 
-        <!-- Dynamic Content Router Outlet / Welcome Landing -->
+        <!-- Dynamic Content Router Outlet -->
         <main class="content">
           <router-outlet></router-outlet>
         </main>
@@ -112,6 +185,7 @@ import { AuthService } from '../../services/auth.service';
       display: flex;
       flex-direction: column;
       gap: 0.5rem;
+      overflow-y: auto;
     }
 
     .nav-item {
@@ -277,8 +351,21 @@ import { AuthService } from '../../services/auth.service';
 })
 export class DashboardComponent {
   private authService = inject(AuthService);
+  currentUser = this.authService.getUser();
+  role = this.authService.getRole();
 
   logout() {
     this.authService.logout();
+  }
+
+  getRoleLabel(role: string | null): string {
+    if (!role) return 'Invitado';
+    const labels: Record<string, string> = {
+      'ADMIN': 'Administrador',
+      'GERENTE': 'Gerente',
+      'JEFE_ALMACEN': 'Jefe de Almacén',
+      'VENDEDOR': 'Vendedor'
+    };
+    return labels[role] || role;
   }
 }

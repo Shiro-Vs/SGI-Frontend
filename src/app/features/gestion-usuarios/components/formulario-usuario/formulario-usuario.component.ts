@@ -26,11 +26,6 @@ import { CustomButtonComponent } from '../../../../shared/components/custom-butt
               <div *ngIf="submitted && f['nombre'].errors" class="invalid-feedback">El nombre es requerido.</div>
             </div>
 
-            <div class="form-group">
-              <label for="apellido">Apellido</label>
-              <input type="text" id="apellido" formControlName="apellido" class="form-control" />
-              <div *ngIf="submitted && f['apellido'].errors" class="invalid-feedback">El apellido es requerido.</div>
-            </div>
 
             <div class="form-group">
               <label for="correo">Correo Electrónico</label>
@@ -195,7 +190,6 @@ export class FormularioUsuarioComponent implements OnInit {
 
   userForm: FormGroup = this.fb.group({
     nombre: ['', Validators.required],
-    apellido: ['', Validators.required],
     correo: ['', [Validators.required, Validators.email]],
     rolId: [2, Validators.required],
     sucursalId: [null],

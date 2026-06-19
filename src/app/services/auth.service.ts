@@ -26,7 +26,14 @@ export class AuthService {
       tap(response => {
         if (response && response.token) {
           localStorage.setItem(this.tokenKey, response.token);
-          this.userSubject.next(response.user || { correo: credentials.correo });
+          const userData = {
+            usuarioId: response.usuarioId,
+            nombre: response.nombre,
+            correo: response.correo,
+            rol: response.rol
+          };
+          localStorage.setItem('sgi_user', JSON.stringify(userData));
+          this.userSubject.next(userData);
         }
       })
     );
@@ -34,6 +41,7 @@ export class AuthService {
 
   logout(): void {
     localStorage.removeItem(this.tokenKey);
+    localStorage.removeItem('sgi_user');
     this.userSubject.next(null);
     this.router.navigate(['/auth/login']);
   }
@@ -46,11 +54,26 @@ export class AuthService {
     return !!this.getToken();
   }
 
+  getRole(): string | null {
+    const user = this.userSubject.value;
+    return user ? user.rol : null;
+  }
+
+  getUser(): any {
+    return this.userSubject.value;
+  }
+
   private loadSession(): void {
     const token = this.getToken();
-    if (token) {
-      // Opcional: decodificar token JWT o realizar petición para verificar sesión
-      this.userSubject.next({ username: 'Usuario SGI' });
+    const userStr = localStorage.getItem('sgi_user');
+    if (token && userStr) {
+      try {
+        this.userSubject.next(JSON.parse(userStr));
+      } catch (e) {
+        this.logout();
+      }
+    } else if (token) {
+      this.userSubject.next({ nombre: 'Usuario SGI', correo: '', rol: 'ADMIN' });
     }
   }
 }

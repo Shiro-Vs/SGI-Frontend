@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { ApiService } from '../../../services/api.service';
@@ -47,10 +47,10 @@ import { EstadoPipe } from '../../../shared/pipes/estado.pipe';
           <tbody>
             <tr *ngFor="let u of usuarios">
               <td>{{ u.id }}</td>
-              <td class="bold-text">{{ u.nombre }} {{ u.apellido }}</td>
+              <td class="bold-text">{{ u.nombre }}{{ u.apellido ? ' ' + u.apellido : '' }}</td>
               <td>{{ u.correo }}</td>
-              <td><span class="role-badge">{{ u.rolId }}</span></td>
-              <td>{{ u.sucursalId || '-' }}</td>
+              <td><span class="role-badge">{{ u.rol || u.rolId }}</span></td>
+              <td>{{ u.sucursal || u.sucursalId || '-' }}</td>
               <td>
                 <span class="status-pill" [ngClass]="u.activo ? 'activo' : 'inactivo'">
                   {{ u.activo | estado }}
@@ -224,6 +224,7 @@ import { EstadoPipe } from '../../../shared/pipes/estado.pipe';
 })
 export class UsuariosListaComponent implements OnInit {
   private apiService = inject(ApiService);
+  private cdr = inject(ChangeDetectorRef);
   
   usuarios: Usuario[] = [];
   loading = true;
@@ -234,19 +235,23 @@ export class UsuariosListaComponent implements OnInit {
 
   cargarUsuarios() {
     this.loading = true;
+    console.log('UsuariosListaComponent: initiating cargarUsuarios...');
     this.apiService.get<Usuario[]>('usuarios').subscribe({
       next: (data) => {
+        console.log('UsuariosListaComponent: success loading usuarios! data:', data);
         this.usuarios = data;
         this.loading = false;
+        this.cdr.detectChanges();
       },
-      error: () => {
-        // En caso de que falle porque no hay backend real corriendo aún, cargamos datos mock
+      error: (err) => {
+        console.error('UsuariosListaComponent: failed loading usuarios! error:', err);
         this.usuarios = [
           { id: 1, correo: 'admin@utp.edu.pe', nombre: 'Juan', apellido: 'Pérez', rolId: 1, sucursalId: 1, activo: true },
           { id: 2, correo: 'mflores@utp.edu.pe', nombre: 'María', apellido: 'Flores', rolId: 2, sucursalId: 1, activo: true },
           { id: 3, correo: 'jquispe@utp.edu.pe', nombre: 'Jorge', apellido: 'Quispe', rolId: 2, sucursalId: 2, activo: false }
         ];
         this.loading = false;
+        this.cdr.detectChanges();
       }
     });
   }
@@ -257,10 +262,11 @@ export class UsuariosListaComponent implements OnInit {
     this.apiService.delete(`usuarios/${id}`).subscribe({
       next: () => {
         this.usuarios = this.usuarios.filter(u => u.id !== id);
+        this.cdr.detectChanges();
       },
       error: () => {
-        // Mock fallback en caso de error
         this.usuarios = this.usuarios.filter(u => u.id !== id);
+        this.cdr.detectChanges();
       }
     });
   }

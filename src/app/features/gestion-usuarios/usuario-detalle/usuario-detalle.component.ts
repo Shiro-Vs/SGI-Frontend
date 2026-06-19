@@ -22,13 +22,13 @@ import { EstadoPipe } from '../../../shared/pipes/estado.pipe';
 
       <div *ngIf="!loading && usuario" class="detail-card">
         <div class="user-avatar">
-          {{ usuario.nombre.charAt(0) }}{{ usuario.apellido.charAt(0) }}
+          {{ usuario.nombre.charAt(0) }}{{ usuario.apellido ? usuario.apellido.charAt(0) : '' }}
         </div>
         
         <div class="details-grid">
           <div class="detail-item">
             <span class="label">Nombre completo</span>
-            <span class="value">{{ usuario.nombre }} {{ usuario.apellido }}</span>
+            <span class="value">{{ usuario.nombre }}{{ usuario.apellido ? ' ' + usuario.apellido : '' }}</span>
           </div>
 
           <div class="detail-item">
@@ -37,13 +37,13 @@ import { EstadoPipe } from '../../../shared/pipes/estado.pipe';
           </div>
 
           <div class="detail-item">
-            <span class="label">Rol ID</span>
-            <span class="value"><span class="role-badge">{{ usuario.rolId }}</span></span>
+            <span class="label">Rol</span>
+            <span class="value"><span class="role-badge">{{ usuario.rol || usuario.rolId }}</span></span>
           </div>
 
           <div class="detail-item">
-            <span class="label">Sucursal ID</span>
-            <span class="value">{{ usuario.sucursalId || '-' }}</span>
+            <span class="label">Sucursal</span>
+            <span class="value">{{ usuario.sucursal || usuario.sucursalId || '-' }}</span>
           </div>
 
           <div class="detail-item">
