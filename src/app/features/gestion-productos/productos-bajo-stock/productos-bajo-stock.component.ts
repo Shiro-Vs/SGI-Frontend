@@ -13,7 +13,7 @@ import { EstadoPipe } from '../../../shared/pipes/estado.pipe';
       <div class="list-header">
         <div>
           <h2>Alerta de Stock Bajo</h2>
-          <p class="subtitle text-danger">Productos cuya existencia actual está por debajo del límite mínimo establecido.</p>
+          <p class="subtitle">Productos cuya existencia actual está por debajo del límite mínimo establecido.</p>
         </div>
       </div>
 
@@ -73,38 +73,41 @@ import { EstadoPipe } from '../../../shared/pipes/estado.pipe';
     .list-header h2 {
       margin: 0;
       font-size: 1.5rem;
-      color: #0f172a;
+      color: #f8fafc;
     }
 
     .subtitle {
       margin: 0.25rem 0 0 0;
       font-size: 0.9rem;
-      color: #64748b;
+      color: #94a3b8;
     }
 
     .text-danger {
-      color: #dc2626 !important;
+      color: #f87171 !important;
     }
 
     .table-card {
-      background-color: white;
-      border: 1px solid #e2e8f0;
+      background-color: #1e293b;
+      border: 1px solid #334155;
       border-radius: 12px;
       overflow: hidden;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
     }
 
     .loading-state, .empty-state {
       padding: 3rem;
       text-align: center;
-      color: #64748b;
+      color: #94a3b8;
       font-size: 1rem;
     }
 
     .success-state {
-      color: #059669;
+      color: #34d399;
       font-weight: 500;
-      background-color: rgba(16, 185, 129, 0.05);
+      background-color: rgba(16, 185, 129, 0.1);
+      border: 1px solid rgba(16, 185, 129, 0.2);
+      border-radius: 8px;
+      margin: 2rem;
     }
 
     .table-responsive {
@@ -119,37 +122,39 @@ import { EstadoPipe } from '../../../shared/pipes/estado.pipe';
     }
 
     .product-table th {
-      background-color: #f8fafc;
+      background-color: #1e293b;
       padding: 1rem 1.5rem;
       font-weight: 600;
-      color: #475569;
-      border-bottom: 1px solid #e2e8f0;
+      color: #94a3b8;
+      border-bottom: 2px solid #334155;
       white-space: nowrap;
     }
 
     .product-table td {
       padding: 1rem 1.5rem;
-      border-bottom: 1px solid #e2e8f0;
-      color: #334155;
+      border-bottom: 1px solid #334155;
+      color: #f8fafc;
     }
 
     .bold-text {
       font-weight: 600;
-      color: #0f172a;
+      color: #f8fafc;
     }
 
     .code-font {
       font-family: monospace;
       font-size: 0.95rem;
       letter-spacing: 0.05em;
+      color: #94a3b8;
     }
 
     .category-badge {
       font-size: 0.75rem;
       font-weight: 600;
       padding: 0.2rem 0.5rem;
-      background-color: #e0e7ff;
-      color: #4338ca;
+      background-color: #0f172a;
+      color: #cbd5e1;
+      border: 1px solid #334155;
       border-radius: 4px;
     }
 
@@ -161,13 +166,13 @@ import { EstadoPipe } from '../../../shared/pipes/estado.pipe';
     }
 
     .status-pill.activo {
-      background-color: rgba(16, 185, 129, 0.1);
-      color: #059669;
+      background-color: rgba(16, 185, 129, 0.2);
+      color: #34d399;
     }
 
     .status-pill.inactivo {
-      background-color: rgba(239, 68, 68, 0.1);
-      color: #dc2626;
+      background-color: rgba(239, 68, 68, 0.2);
+      color: #f87171;
     }
   `]
 })

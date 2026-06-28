@@ -1,24 +1,29 @@
 import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { MantenimientoService } from '../../../services/mantenimiento.service';
 import { AuthService } from '../../../services/auth.service';
 import { Categoria } from '../../../core/models/categoria.model';
 import { EstadoPipe } from '../../../shared/pipes/estado.pipe';
-import { CustomButtonComponent } from '../../../shared/components/custom-button/custom-button.component';
+import { ModalComponent } from '../../../shared/components/modal/modal.component';
+import { ConfirmModalComponent } from '../../../shared/components/confirm-modal/confirm-modal.component';
+import { FormularioCategoriaComponent } from '../components/formulario-categoria/formulario-categoria.component';
 
 @Component({
   selector: 'app-categorias-lista',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, EstadoPipe, CustomButtonComponent],
+  imports: [CommonModule, EstadoPipe, ModalComponent, ConfirmModalComponent, FormularioCategoriaComponent],
   template: `
     <div class="category-layout">
-      <!-- Tabla de Categorías -->
-      <div class="list-section" [ngClass]="{ 'full-width': !isAdmin }">
+      <div class="list-section full-width">
         <div class="list-header">
           <div>
             <h2>Categorías de Productos</h2>
             <p class="subtitle">Clasificación de productos dentro del inventario general.</p>
+          </div>
+          <div class="header-actions">
+            <button *ngIf="isAdmin" (click)="abrirModalCrear()" class="btn-primary-link">
+              <i class="bi bi-plus-circle"></i> Nueva Categoría
+            </button>
           </div>
         </div>
 
@@ -51,9 +56,9 @@ import { CustomButtonComponent } from '../../../shared/components/custom-button/
                     {{ c.activa | estado }}
                   </span>
                 </td>
-                <td class="actions-cell" *ngIf="isAdmin">
-                  <button (click)="cargarEdicion(c)" class="action-btn edit" title="Editar">✏️</button>
-                  <button (click)="eliminarCategoria(c.id)" class="action-btn delete" title="Eliminar">🗑️</button>
+                <td class="actions" *ngIf="isAdmin">
+                  <button (click)="abrirModalEditar(c.id!)" class="action-btn edit" title="Editar"><i class="bi bi-pencil"></i></button>
+                  <button (click)="abrirModalEliminar(c.id!)" class="action-btn delete" title="Eliminar"><i class="bi bi-trash"></i></button>
                 </td>
               </tr>
             </tbody>
@@ -61,118 +66,93 @@ import { CustomButtonComponent } from '../../../shared/components/custom-button/
         </div>
       </div>
 
-      <!-- Formulario Lateral (Solo ADMIN) -->
-      <div class="form-section" *ngIf="isAdmin">
-        <div class="form-card">
-          <h3>{{ esEdicion ? 'Editar Categoría' : 'Nueva Categoría' }}</h3>
-          <p class="subtitle">Complete la información para guardar la categoría.</p>
-          
-          <form [formGroup]="categoriaForm" (ngSubmit)="onSubmit()" class="cat-form">
-            <div class="form-group">
-              <label for="nombre">Nombre</label>
-              <input
-                type="text"
-                id="nombre"
-                formControlName="nombre"
-                placeholder="Ej. Abarrotes, Bebidas"
-                class="form-control"
-                [ngClass]="{ 'is-invalid': submitted && f['nombre'].errors }"
-              />
-              <div *ngIf="submitted && f['nombre'].errors" class="invalid-feedback">
-                El nombre es obligatorio.
-              </div>
-            </div>
+      <app-modal
+        [isOpen]="isFormModalOpen"
+        [title]="selectedCategoriaId ? 'Editar Categoría' : 'Nueva Categoría'"
+        width="500px"
+        (close)="cerrarFormModal()"
+      >
+        <app-formulario-categoria
+          *ngIf="isFormModalOpen"
+          [esEdicion]="!!selectedCategoriaId"
+          [categoriaId]="selectedCategoriaId"
+          (guardado)="onCategoriaGuardada()"
+          (cancelado)="cerrarFormModal()"
+        ></app-formulario-categoria>
+      </app-modal>
 
-            <div class="form-group">
-              <label for="descripcion">Descripción</label>
-              <textarea
-                id="descripcion"
-                formControlName="descripcion"
-                placeholder="Detalle de los artículos de esta categoría..."
-                class="form-control textarea"
-                rows="3"
-              ></textarea>
-            </div>
-
-            <div class="form-group checkbox-group">
-              <label class="checkbox-label">
-                <input type="checkbox" formControlName="activa" />
-                Categoría Activa
-              </label>
-            </div>
-
-            <div *ngIf="error" class="alert-error">
-              {{ error }}
-            </div>
-
-            <div class="form-actions">
-              <button
-                type="button"
-                *ngIf="esEdicion"
-                (click)="cancelarEdicion()"
-                class="btn-secondary-sm"
-              >
-                Cancelar
-              </button>
-              <app-custom-button
-                type="submit"
-                [label]="esEdicion ? 'Actualizar' : 'Crear'"
-                [loading]="formLoading"
-              ></app-custom-button>
-            </div>
-          </form>
-        </div>
-      </div>
+      <app-confirm-modal
+        [isOpen]="isConfirmModalOpen"
+        title="Eliminar Categoría"
+        message="¿Está seguro de que desea eliminar esta categoría? Los productos asociados perderán su clasificación."
+        confirmText="Eliminar"
+        confirmStyle="delete"
+        (confirm)="confirmarEliminacion()"
+        (cancel)="isConfirmModalOpen = false"
+      ></app-confirm-modal>
     </div>
   `,
   styles: [`
     .category-layout {
       display: flex;
-      gap: 1.5rem;
-      align-items: flex-start;
-    }
-
-    .list-section {
-      flex: 3;
-      display: flex;
       flex-direction: column;
-      gap: 1rem;
+      gap: 1.5rem;
     }
 
     .list-section.full-width {
-      flex: 1;
+      width: 100%;
     }
 
-    .form-section {
-      flex: 1.5;
-      position: sticky;
-      top: 90px;
+    .list-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.5rem;
     }
 
     .list-header h2 {
       margin: 0;
       font-size: 1.5rem;
-      color: #0f172a;
+      color: #f8fafc;
     }
 
     .subtitle {
       margin: 0.25rem 0 0 0;
-      font-size: 0.85rem;
-      color: #64748b;
+      font-size: 0.9rem;
+      color: #94a3b8;
+    }
+
+    .btn-primary-link {
+      background-color: #3b82f6;
+      color: white;
+      border: none;
+      padding: 0.6rem 1.2rem;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 0.95rem;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.2);
+    }
+
+    .btn-primary-link:hover {
+      background-color: #2563eb;
     }
 
     .table-card {
-      background-color: white;
-      border: 1px solid #e2e8f0;
+      background-color: #1e293b;
+      border: 1px solid #334155;
       border-radius: 12px;
       overflow: hidden;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
     }
 
     .loading-state, .empty-state {
       padding: 3rem;
       text-align: center;
-      color: #64748b;
+      color: #94a3b8;
     }
 
     .category-table {
@@ -183,22 +163,22 @@ import { CustomButtonComponent } from '../../../shared/components/custom-button/
     }
 
     .category-table th {
-      background-color: #f8fafc;
+      background-color: #1e293b;
       padding: 1rem 1.5rem;
       font-weight: 600;
-      color: #475569;
-      border-bottom: 1px solid #e2e8f0;
+      color: #94a3b8;
+      border-bottom: 2px solid #334155;
     }
 
     .category-table td {
       padding: 1rem 1.5rem;
-      border-bottom: 1px solid #e2e8f0;
-      color: #334155;
+      border-bottom: 1px solid #334155;
+      color: #f8fafc;
     }
 
     .bold-text {
       font-weight: 600;
-      color: #0f172a;
+      color: #f8fafc;
     }
 
     .status-pill {
@@ -209,21 +189,21 @@ import { CustomButtonComponent } from '../../../shared/components/custom-button/
     }
 
     .status-pill.activo {
-      background-color: rgba(16, 185, 129, 0.1);
-      color: #059669;
+      background-color: rgba(16, 185, 129, 0.2);
+      color: #34d399;
     }
 
     .status-pill.inactivo {
-      background-color: rgba(239, 68, 68, 0.1);
-      color: #dc2626;
+      background-color: rgba(239, 68, 68, 0.2);
+      color: #f87171;
     }
 
     .actions-col {
-      width: 100px;
+      width: 120px;
       text-align: center;
     }
 
-    .actions-cell {
+    .actions {
       display: flex;
       justify-content: center;
       gap: 0.5rem;
@@ -235,27 +215,18 @@ import { CustomButtonComponent } from '../../../shared/components/custom-button/
       justify-content: center;
       width: 32px;
       height: 32px;
-      border: 1px solid #e2e8f0;
       border-radius: 6px;
-      background-color: white;
+      border: 1px solid transparent;
       cursor: pointer;
-      font-size: 0.85rem;
+      font-size: 0.9rem;
       transition: all 0.2s;
     }
 
-    .action-btn:hover {
-      background-color: #f1f5f9;
-    }
+    .action-btn.edit { color: #60a5fa; background-color: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.2); }
+    .action-btn.edit:hover { background-color: rgba(59, 130, 246, 0.2); }
 
-    .action-btn.edit:hover {
-      color: #f59e0b;
-      border-color: #f59e0b;
-    }
-
-    .action-btn.delete:hover {
-      color: #ef4444;
-      border-color: #ef4444;
-    }
+    .action-btn.delete { color: #f87171; background-color: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); }
+    .action-btn.delete:hover { background-color: rgba(239, 68, 68, 0.2); }
 
     /* Form Styles */
     .form-card {
@@ -383,7 +354,6 @@ import { CustomButtonComponent } from '../../../shared/components/custom-button/
   `]
 })
 export class CategoriasListaComponent implements OnInit {
-  private fb = inject(FormBuilder);
   private mantenimientoService = inject(MantenimientoService);
   private authService = inject(AuthService);
   private cdr = inject(ChangeDetectorRef);
@@ -392,21 +362,9 @@ export class CategoriasListaComponent implements OnInit {
   loading = true;
   isAdmin = false;
 
-  categoriaForm: FormGroup = this.fb.group({
-    nombre: ['', Validators.required],
-    descripcion: [''],
-    activa: [true]
-  });
-
-  esEdicion = false;
-  editingId?: number;
-  formLoading = false;
-  submitted = false;
-  error = '';
-
-  get f() {
-    return this.categoriaForm.controls;
-  }
+  isFormModalOpen = false;
+  isConfirmModalOpen = false;
+  selectedCategoriaId?: number;
 
   ngOnInit() {
     this.isAdmin = this.authService.getRole() === 'ADMIN';
@@ -428,72 +386,40 @@ export class CategoriasListaComponent implements OnInit {
     });
   }
 
-  onSubmit() {
-    this.submitted = true;
-    this.error = '';
-
-    if (this.categoriaForm.invalid) {
-      return;
-    }
-
-    this.formLoading = true;
-    const body = this.categoriaForm.value;
-
-    if (this.esEdicion && this.editingId) {
-      this.mantenimientoService.actualizarCategoria(this.editingId, body).subscribe({
-        next: () => {
-          this.formLoading = false;
-          this.cancelarEdicion();
-          this.cargarCategorias();
-        },
-        error: (err) => {
-          this.error = err.error?.message || 'Error al actualizar la categoría.';
-          this.formLoading = false;
-          this.cdr.detectChanges();
-        }
-      });
-    } else {
-      this.mantenimientoService.crearCategoria(body).subscribe({
-        next: () => {
-          this.formLoading = false;
-          this.categoriaForm.reset({ activa: true });
-          this.submitted = false;
-          this.cargarCategorias();
-        },
-        error: (err) => {
-          this.error = err.error?.message || 'Error al crear la categoría.';
-          this.formLoading = false;
-          this.cdr.detectChanges();
-        }
-      });
-    }
+  abrirModalCrear() {
+    this.selectedCategoriaId = undefined;
+    this.isFormModalOpen = true;
   }
 
-  cargarEdicion(c: Categoria) {
-    this.esEdicion = true;
-    this.editingId = c.id;
-    this.categoriaForm.patchValue({
-      nombre: c.nombre,
-      descripcion: c.descripcion,
-      activa: c.activa
-    });
-    this.cdr.detectChanges();
+  abrirModalEditar(id: number) {
+    this.selectedCategoriaId = id;
+    this.isFormModalOpen = true;
   }
 
-  cancelarEdicion() {
-    this.esEdicion = false;
-    this.editingId = undefined;
-    this.categoriaForm.reset({ activa: true });
-    this.submitted = false;
-    this.error = '';
-    this.cdr.detectChanges();
+  abrirModalEliminar(id: number) {
+    this.selectedCategoriaId = id;
+    this.isConfirmModalOpen = true;
   }
 
-  eliminarCategoria(id: number | undefined) {
-    if (!id || !confirm('¿Está seguro de eliminar esta categoría?')) return;
+  cerrarFormModal() {
+    this.isFormModalOpen = false;
+  }
 
-    this.mantenimientoService.eliminarCategoria(id).subscribe({
+  onCategoriaGuardada() {
+    this.isFormModalOpen = false;
+    this.cargarCategorias();
+  }
+
+  confirmarEliminacion() {
+    if (!this.selectedCategoriaId) return;
+
+    this.mantenimientoService.eliminarCategoria(this.selectedCategoriaId).subscribe({
       next: () => {
+        this.isConfirmModalOpen = false;
+        this.cargarCategorias();
+      },
+      error: () => {
+        this.isConfirmModalOpen = false;
         this.cargarCategorias();
       }
     });

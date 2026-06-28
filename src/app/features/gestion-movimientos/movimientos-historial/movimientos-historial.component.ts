@@ -34,8 +34,7 @@ import { Movimiento } from '../../../core/models/movimiento.model';
                 <th>Tipo</th>
                 <th>Producto (SKU)</th>
                 <th>Cantidad</th>
-                <th>Sucursal Origen</th>
-                <th>Sucursal Destino</th>
+                <th>Sucursal</th>
                 <th>Usuario</th>
                 <th>Observación</th>
               </tr>
@@ -54,8 +53,11 @@ import { Movimiento } from '../../../core/models/movimiento.model';
                   <span class="sku-text" *ngIf="m.skuProducto">({{ m.skuProducto }})</span>
                 </td>
                 <td class="bold-text quantity-col">{{ m.cantidad }}</td>
-                <td>{{ m.sucursalOrigen || '-' }}</td>
-                <td>{{ m.sucursalDestino || '-' }}</td>
+                <td>
+                  <span *ngIf="m.tipo === 'TRANSFERENCIA'" class="transfer-branch">{{ m.sucursalOrigen }} <span class="arrow">➔</span> {{ m.sucursalDestino }}</span>
+                  <span *ngIf="m.tipo === 'ENTRADA'">{{ m.sucursalDestino }}</span>
+                  <span *ngIf="m.tipo === 'SALIDA'">{{ m.sucursalOrigen }}</span>
+                </td>
                 <td><span class="user-badge">👤 {{ m.usuario || '-' }}</span></td>
                 <td><span class="obs-text">{{ m.observacion || '-' }}</span></td>
               </tr>
@@ -75,27 +77,27 @@ import { Movimiento } from '../../../core/models/movimiento.model';
     .list-header h2 {
       margin: 0;
       font-size: 1.5rem;
-      color: #0f172a;
+      color: #f8fafc;
     }
 
     .subtitle {
       margin: 0.25rem 0 0 0;
       font-size: 0.9rem;
-      color: #64748b;
+      color: #94a3b8;
     }
 
     .table-card {
-      background-color: white;
-      border: 1px solid #e2e8f0;
+      background-color: #1e293b;
+      border: 1px solid #334155;
       border-radius: 12px;
       overflow: hidden;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
     }
 
     .loading-state, .empty-state {
       padding: 3rem;
       text-align: center;
-      color: #64748b;
+      color: #94a3b8;
       font-size: 1rem;
     }
 
@@ -111,33 +113,33 @@ import { Movimiento } from '../../../core/models/movimiento.model';
     }
 
     .movement-table th {
-      background-color: #f8fafc;
+      background-color: #1e293b;
       padding: 1rem 1.5rem;
       font-weight: 600;
-      color: #475569;
-      border-bottom: 1px solid #e2e8f0;
+      color: #94a3b8;
+      border-bottom: 2px solid #334155;
       white-space: nowrap;
     }
 
     .movement-table td {
       padding: 1rem 1.5rem;
-      border-bottom: 1px solid #e2e8f0;
-      color: #334155;
+      border-bottom: 1px solid #334155;
+      color: #f8fafc;
     }
 
     .bold-text {
       font-weight: 600;
-      color: #0f172a;
+      color: #f8fafc;
     }
 
     .sku-text {
-      color: #64748b;
+      color: #94a3b8;
       font-family: monospace;
       font-size: 0.85rem;
     }
 
     .quantity-col {
-      color: #4f46e5;
+      color: #60a5fa;
     }
 
     .type-badge {
@@ -150,24 +152,25 @@ import { Movimiento } from '../../../core/models/movimiento.model';
     }
 
     .type-badge.entrada {
-      background-color: rgba(16, 185, 129, 0.1);
-      color: #059669;
+      background-color: rgba(16, 185, 129, 0.2);
+      color: #34d399;
     }
 
     .type-badge.salida {
-      background-color: rgba(245, 158, 11, 0.1);
-      color: #d97706;
+      background-color: rgba(239, 68, 68, 0.2);
+      color: #f87171;
     }
 
     .type-badge.transferencia {
-      background-color: rgba(59, 130, 246, 0.1);
-      color: #2563eb;
+      background-color: rgba(59, 130, 246, 0.2);
+      color: #60a5fa;
     }
 
     .user-badge {
       font-size: 0.8rem;
-      background-color: #f1f5f9;
-      color: #475569;
+      background-color: #0f172a;
+      color: #cbd5e1;
+      border: 1px solid #334155;
       padding: 0.2rem 0.5rem;
       border-radius: 4px;
     }
@@ -175,7 +178,18 @@ import { Movimiento } from '../../../core/models/movimiento.model';
     .obs-text {
       font-style: italic;
       font-size: 0.85rem;
+      color: #94a3b8;
+    }
+
+    .transfer-branch {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .arrow {
       color: #64748b;
+      font-size: 0.8rem;
     }
   `]
 })

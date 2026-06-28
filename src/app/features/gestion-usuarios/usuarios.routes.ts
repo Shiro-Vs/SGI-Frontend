@@ -9,14 +9,6 @@ export const usuariosRoutes: Routes = [
     component: UsuariosListaComponent
   },
   {
-    path: 'nuevo',
-    component: FormularioUsuarioComponent
-  },
-  {
-    path: 'editar/:id',
-    component: FormularioUsuarioComponent
-  },
-  {
     path: ':id',
     component: UsuarioDetalleComponent
   }

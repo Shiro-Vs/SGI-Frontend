@@ -30,7 +30,8 @@ export class AuthService {
             usuarioId: response.usuarioId,
             nombre: response.nombre,
             correo: response.correo,
-            rol: response.rol
+            rol: response.rol,
+            sucursalId: response.sucursalId
           };
           localStorage.setItem('sgi_user', JSON.stringify(userData));
           this.userSubject.next(userData);

@@ -4,11 +4,14 @@ import { RouterLink } from '@angular/router';
 import { ApiService } from '../../../services/api.service';
 import { Usuario } from '../../../core/models/usuario.model';
 import { EstadoPipe } from '../../../shared/pipes/estado.pipe';
+import { ModalComponent } from '../../../shared/components/modal/modal.component';
+import { ConfirmModalComponent } from '../../../shared/components/confirm-modal/confirm-modal.component';
+import { FormularioUsuarioComponent } from '../components/formulario-usuario/formulario-usuario.component';
 
 @Component({
   selector: 'app-usuarios-lista',
   standalone: true,
-  imports: [CommonModule, RouterLink, EstadoPipe],
+  imports: [CommonModule, RouterLink, EstadoPipe, ModalComponent, ConfirmModalComponent, FormularioUsuarioComponent],
   template: `
     <div class="user-list-container">
       <div class="list-header">
@@ -16,10 +19,10 @@ import { EstadoPipe } from '../../../shared/pipes/estado.pipe';
           <h2>Gestión de Usuarios</h2>
           <p class="subtitle">Lista y administración de cuentas de usuario del sistema.</p>
         </div>
-        <div>
-          <a routerLink="nuevo" class="btn-primary-link">
-            ➕ Nuevo Usuario
-          </a>
+        <div class="header-actions">
+          <button (click)="abrirModalCrear()" class="btn-primary-link">
+            <i class="bi bi-plus-circle"></i> Nuevo Usuario
+          </button>
         </div>
       </div>
 
@@ -49,22 +52,47 @@ import { EstadoPipe } from '../../../shared/pipes/estado.pipe';
               <td>{{ u.id }}</td>
               <td class="bold-text">{{ u.nombre }}{{ u.apellido ? ' ' + u.apellido : '' }}</td>
               <td>{{ u.correo }}</td>
-              <td><span class="role-badge">{{ u.rol || u.rolId }}</span></td>
+              <td><span class="role-badge" [ngClass]="getRoleClass(u.rol || u.rolId)">{{ u.rol || u.rolId }}</span></td>
               <td>{{ u.sucursal || u.sucursalId || '-' }}</td>
               <td>
                 <span class="status-pill" [ngClass]="u.activo ? 'activo' : 'inactivo'">
                   {{ u.activo | estado }}
                 </span>
               </td>
-              <td class="actions-cell">
-                <a [routerLink]="[u.id]" class="action-btn view" title="Ver Detalle">👁️</a>
-                <a [routerLink]="['editar', u.id]" class="action-btn edit" title="Editar">✏️</a>
-                <button (click)="eliminarUsuario(u.id)" class="action-btn delete" title="Eliminar">🗑️</button>
+              <td class="actions">
+                <a [routerLink]="[u.id]" class="action-btn view" title="Ver Detalle"><i class="bi bi-eye"></i></a>
+                <button (click)="abrirModalEditar(u.id!)" class="action-btn edit" title="Editar"><i class="bi bi-pencil"></i></button>
+                <button (click)="abrirModalEliminar(u.id!)" class="action-btn delete" title="Eliminar"><i class="bi bi-trash"></i></button>
               </td>
             </tr>
           </tbody>
         </table>
       </div>
+
+      <app-modal
+        [isOpen]="isFormModalOpen"
+        [title]="selectedUserId ? 'Editar Usuario' : 'Nuevo Usuario'"
+        width="450px"
+        (close)="cerrarFormModal()"
+      >
+        <app-formulario-usuario
+          *ngIf="isFormModalOpen"
+          [esEdicion]="!!selectedUserId"
+          [userId]="selectedUserId"
+          (guardado)="onUsuarioGuardado()"
+          (cancelado)="cerrarFormModal()"
+        ></app-formulario-usuario>
+      </app-modal>
+
+      <app-confirm-modal
+        [isOpen]="isConfirmModalOpen"
+        title="Eliminar Usuario"
+        message="¿Está seguro de que desea desactivar/eliminar esta cuenta de usuario? Esta acción no se puede deshacer de forma simple."
+        confirmText="Eliminar"
+        confirmStyle="delete"
+        (confirm)="confirmarEliminacion()"
+        (cancel)="isConfirmModalOpen = false"
+      ></app-confirm-modal>
     </div>
   `,
   styles: [`
@@ -83,44 +111,46 @@ import { EstadoPipe } from '../../../shared/pipes/estado.pipe';
     .list-header h2 {
       margin: 0;
       font-size: 1.5rem;
-      color: #0f172a;
+      color: #f8fafc;
     }
 
     .subtitle {
       margin: 0.25rem 0 0 0;
       font-size: 0.9rem;
-      color: #64748b;
+      color: #94a3b8;
     }
 
     .btn-primary-link {
+      background-color: #3b82f6;
+      color: white;
+      border: none;
+      padding: 0.6rem 1.2rem;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 0.95rem;
+      cursor: pointer;
       display: inline-flex;
       align-items: center;
-      padding: 0.6rem 1.25rem;
-      background-color: #4f46e5;
-      color: white;
-      font-weight: 600;
-      font-size: 0.9rem;
-      border-radius: 8px;
-      text-decoration: none;
-      transition: background-color 0.2s;
+      gap: 0.5rem;
+      box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.2);
     }
 
     .btn-primary-link:hover {
-      background-color: #4338ca;
+      background-color: #2563eb;
     }
 
     .table-card {
-      background-color: white;
-      border: 1px solid #e2e8f0;
+      background-color: #1e293b;
+      border: 1px solid #334155;
       border-radius: 12px;
       overflow: hidden;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
     }
 
     .loading-state, .empty-state {
       padding: 3rem;
       text-align: center;
-      color: #64748b;
+      color: #94a3b8;
     }
 
     .user-table {
@@ -131,32 +161,55 @@ import { EstadoPipe } from '../../../shared/pipes/estado.pipe';
     }
 
     .user-table th {
-      background-color: #f8fafc;
+      background-color: #1e293b;
       padding: 1rem 1.5rem;
       font-weight: 600;
-      color: #475569;
-      border-bottom: 1px solid #e2e8f0;
+      color: #94a3b8;
+      border-bottom: 2px solid #334155;
     }
 
     .user-table td {
       padding: 1rem 1.5rem;
-      border-bottom: 1px solid #e2e8f0;
-      color: #334155;
+      border-bottom: 1px solid #334155;
+      color: #f8fafc;
     }
 
     .bold-text {
       font-weight: 600;
-      color: #0f172a;
+      color: #f8fafc;
     }
 
     .role-badge {
-      font-size: 0.75rem;
-      font-weight: 600;
-      padding: 0.2rem 0.5rem;
-      background-color: #f1f5f9;
-      color: #475569;
-      border-radius: 4px;
+      font-size: 0.70rem;
+      font-weight: 700;
+      padding: 0.3rem 0.6rem;
+      border-radius: 9999px;
       text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .role-badge.admin {
+      background-color: rgba(168, 85, 247, 0.2);
+      color: #d8b4fe;
+      border: 1px solid rgba(168, 85, 247, 0.3);
+    }
+
+    .role-badge.vendedor {
+      background-color: rgba(59, 130, 246, 0.2);
+      color: #93c5fd;
+      border: 1px solid rgba(59, 130, 246, 0.3);
+    }
+
+    .role-badge.jefe-almacen {
+      background-color: rgba(245, 158, 11, 0.2);
+      color: #fcd34d;
+      border: 1px solid rgba(245, 158, 11, 0.3);
+    }
+
+    .role-badge.default {
+      background-color: rgba(148, 163, 184, 0.2);
+      color: #cbd5e1;
+      border: 1px solid rgba(148, 163, 184, 0.3);
     }
 
     .status-pill {
@@ -167,13 +220,13 @@ import { EstadoPipe } from '../../../shared/pipes/estado.pipe';
     }
 
     .status-pill.activo {
-      background-color: rgba(16, 185, 129, 0.1);
-      color: #059669;
+      background-color: rgba(16, 185, 129, 0.2);
+      color: #34d399;
     }
 
     .status-pill.inactivo {
-      background-color: rgba(239, 68, 68, 0.1);
-      color: #dc2626;
+      background-color: rgba(239, 68, 68, 0.2);
+      color: #f87171;
     }
 
     .actions-col {
@@ -181,7 +234,7 @@ import { EstadoPipe } from '../../../shared/pipes/estado.pipe';
       text-align: center;
     }
 
-    .actions-cell {
+    .actions {
       display: flex;
       justify-content: center;
       gap: 0.5rem;
@@ -194,32 +247,21 @@ import { EstadoPipe } from '../../../shared/pipes/estado.pipe';
       width: 32px;
       height: 32px;
       border-radius: 6px;
-      border: 1px solid #e2e8f0;
-      background-color: white;
+      border: 1px solid transparent;
       cursor: pointer;
       font-size: 0.9rem;
       text-decoration: none;
       transition: all 0.2s;
     }
 
-    .action-btn:hover {
-      background-color: #f1f5f9;
-    }
+    .action-btn.view { color: #f8fafc; background-color: #0f172a; border: 1px solid #334155; }
+    .action-btn.view:hover { background-color: #334155; }
 
-    .action-btn.view:hover {
-      color: #3b82f6;
-      border-color: #3b82f6;
-    }
+    .action-btn.edit { color: #60a5fa; background-color: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.2); }
+    .action-btn.edit:hover { background-color: rgba(59, 130, 246, 0.2); }
 
-    .action-btn.edit:hover {
-      color: #f59e0b;
-      border-color: #f59e0b;
-    }
-
-    .action-btn.delete:hover {
-      color: #ef4444;
-      border-color: #ef4444;
-    }
+    .action-btn.delete { color: #f87171; background-color: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); }
+    .action-btn.delete:hover { background-color: rgba(239, 68, 68, 0.2); }
   `]
 })
 export class UsuariosListaComponent implements OnInit {
@@ -229,8 +271,21 @@ export class UsuariosListaComponent implements OnInit {
   usuarios: Usuario[] = [];
   loading = true;
 
+  isFormModalOpen = false;
+  isConfirmModalOpen = false;
+  selectedUserId?: number;
+
   ngOnInit() {
     this.cargarUsuarios();
+  }
+
+  getRoleClass(role: any): string {
+    if (!role) return 'default';
+    const r = role.toString().toUpperCase();
+    if (r === 'ADMIN' || r === '1') return 'admin';
+    if (r === 'VENDEDOR' || r === '2') return 'vendedor';
+    if (r === 'JEFE_ALMACEN' || r === '3') return 'jefe-almacen';
+    return 'default';
   }
 
   cargarUsuarios() {
@@ -256,16 +311,42 @@ export class UsuariosListaComponent implements OnInit {
     });
   }
 
-  eliminarUsuario(id: number | undefined) {
-    if (!id || !confirm('¿Está seguro de eliminar este usuario?')) return;
+  abrirModalCrear() {
+    this.selectedUserId = undefined;
+    this.isFormModalOpen = true;
+  }
+
+  abrirModalEditar(id: number) {
+    this.selectedUserId = id;
+    this.isFormModalOpen = true;
+  }
+
+  abrirModalEliminar(id: number) {
+    this.selectedUserId = id;
+    this.isConfirmModalOpen = true;
+  }
+
+  cerrarFormModal() {
+    this.isFormModalOpen = false;
+  }
+
+  onUsuarioGuardado() {
+    this.isFormModalOpen = false;
+    this.cargarUsuarios();
+  }
+
+  confirmarEliminacion() {
+    if (!this.selectedUserId) return;
     
-    this.apiService.delete(`usuarios/${id}`).subscribe({
+    this.apiService.delete(`usuarios/${this.selectedUserId}`).subscribe({
       next: () => {
-        this.usuarios = this.usuarios.filter(u => u.id !== id);
+        this.usuarios = this.usuarios.filter(u => u.id !== this.selectedUserId);
+        this.isConfirmModalOpen = false;
         this.cdr.detectChanges();
       },
       error: () => {
-        this.usuarios = this.usuarios.filter(u => u.id !== id);
+        this.usuarios = this.usuarios.filter(u => u.id !== this.selectedUserId);
+        this.isConfirmModalOpen = false;
         this.cdr.detectChanges();
       }
     });

@@ -13,4 +13,7 @@ export interface Producto {
   activo: boolean;
   categoriaId?: number;
   categoria?: Categoria | string;
+  sucursalId?: number;
+  sucursal?: string;
+  stockActual?: number;
 }

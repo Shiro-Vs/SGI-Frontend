@@ -6,19 +6,27 @@ import { AuthService } from '../../../services/auth.service';
 import { Sucursal } from '../../../core/models/sucursal.model';
 import { EstadoPipe } from '../../../shared/pipes/estado.pipe';
 import { CustomButtonComponent } from '../../../shared/components/custom-button/custom-button.component';
+import { ModalComponent } from '../../../shared/components/modal/modal.component';
+import { ConfirmModalComponent } from '../../../shared/components/confirm-modal/confirm-modal.component';
+import { FormularioSucursalComponent } from '../components/formulario-sucursal/formulario-sucursal.component';
 
 @Component({
   selector: 'app-sucursales-lista',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, EstadoPipe, CustomButtonComponent],
+  imports: [CommonModule, ReactiveFormsModule, EstadoPipe, ModalComponent, ConfirmModalComponent, FormularioSucursalComponent],
   template: `
     <div class="sucursal-layout">
       <!-- Tabla de Sucursales -->
-      <div class="list-section" [ngClass]="{ 'full-width': !isAdmin }">
+      <div class="list-section full-width">
         <div class="list-header">
           <div>
             <h2>Sucursales (Locales)</h2>
             <p class="subtitle">Lista y locales físicos autorizados en el sistema.</p>
+          </div>
+          <div class="header-actions" *ngIf="isAdmin">
+            <button (click)="abrirModalCrear()" class="btn-primary-link">
+              <i class="bi bi-plus-circle"></i> Nueva Sucursal
+            </button>
           </div>
         </div>
 
@@ -53,9 +61,9 @@ import { CustomButtonComponent } from '../../../shared/components/custom-button/
                     {{ s.activa | estado }}
                   </span>
                 </td>
-                <td class="actions-cell" *ngIf="isAdmin">
-                  <button (click)="cargarEdicion(s)" class="action-btn edit" title="Editar">✏️</button>
-                  <button (click)="desactivarSucursal(s.id)" class="action-btn delete" title="Desactivar">🗑️</button>
+                <td class="actions" *ngIf="isAdmin">
+                  <button (click)="abrirModalEditar(s.id!)" class="action-btn edit" title="Editar"><i class="bi bi-pencil"></i></button>
+                  <button (click)="abrirModalEliminar(s.id!)" class="action-btn delete" title="Desactivar"><i class="bi bi-trash"></i></button>
                 </td>
               </tr>
             </tbody>
@@ -63,88 +71,30 @@ import { CustomButtonComponent } from '../../../shared/components/custom-button/
         </div>
       </div>
 
-      <!-- Formulario Lateral (Solo ADMIN) -->
-      <div class="form-section" *ngIf="isAdmin">
-        <div class="form-card">
-          <h3>{{ esEdicion ? 'Editar Sucursal' : 'Nueva Sucursal' }}</h3>
-          <p class="subtitle">Complete la información para guardar el local.</p>
-          
-          <form [formGroup]="sucursalForm" (ngSubmit)="onSubmit()" class="suc-form">
-            
-            <div class="form-group">
-              <label for="nombre">Nombre del Local</label>
-              <input
-                type="text"
-                id="nombre"
-                formControlName="nombre"
-                placeholder="Ej. Minimarket SGI Lince"
-                class="form-control"
-                [ngClass]="{ 'is-invalid': submitted && f['nombre'].errors }"
-              />
-              <div *ngIf="submitted && f['nombre'].errors" class="invalid-feedback">
-                El nombre es obligatorio.
-              </div>
-            </div>
+      <app-modal
+        [isOpen]="isFormModalOpen"
+        [title]="selectedSucursalId ? 'Editar Sucursal' : 'Nueva Sucursal'"
+        width="550px"
+        (close)="cerrarFormModal()"
+      >
+        <app-formulario-sucursal
+          *ngIf="isFormModalOpen"
+          [esEdicion]="!!selectedSucursalId"
+          [sucursalId]="selectedSucursalId"
+          (guardado)="onSucursalGuardada()"
+          (cancelado)="cerrarFormModal()"
+        ></app-formulario-sucursal>
+      </app-modal>
 
-            <div class="form-group">
-              <label for="direccion">Dirección</label>
-              <input
-                type="text"
-                id="direccion"
-                formControlName="direccion"
-                placeholder="Dirección física"
-                class="form-control"
-                [ngClass]="{ 'is-invalid': submitted && f['direccion'].errors }"
-              />
-              <div *ngIf="submitted && f['direccion'].errors" class="invalid-feedback">
-                La dirección es obligatoria.
-              </div>
-            </div>
-
-            <div class="form-group">
-              <label for="distrito">Distrito</label>
-              <input
-                type="text"
-                id="distrito"
-                formControlName="distrito"
-                placeholder="Ej. Lince, San Isidro"
-                class="form-control"
-                [ngClass]="{ 'is-invalid': submitted && f['distrito'].errors }"
-              />
-              <div *ngIf="submitted && f['distrito'].errors" class="invalid-feedback">
-                El distrito es obligatorio.
-              </div>
-            </div>
-
-            <div class="form-group checkbox-group">
-              <label class="checkbox-label">
-                <input type="checkbox" formControlName="activa" />
-                Sucursal Activa
-              </label>
-            </div>
-
-            <div *ngIf="error" class="alert-error">
-              {{ error }}
-            </div>
-
-            <div class="form-actions">
-              <button
-                type="button"
-                *ngIf="esEdicion"
-                (click)="cancelarEdicion()"
-                class="btn-secondary-sm"
-              >
-                Cancelar
-              </button>
-              <app-custom-button
-                type="submit"
-                [label]="esEdicion ? 'Actualizar' : 'Crear'"
-                [loading]="formLoading"
-              ></app-custom-button>
-            </div>
-          </form>
-        </div>
-      </div>
+      <app-confirm-modal
+        [isOpen]="isConfirmModalOpen"
+        title="Desactivar Sucursal"
+        message="¿Está seguro de que desea desactivar esta sucursal? No estará disponible para nuevas transacciones."
+        confirmText="Desactivar"
+        confirmStyle="delete"
+        (confirm)="confirmarEliminacion()"
+        (cancel)="isConfirmModalOpen = false"
+      ></app-confirm-modal>
     </div>
   `,
   styles: [`
@@ -152,6 +102,18 @@ import { CustomButtonComponent } from '../../../shared/components/custom-button/
       display: flex;
       gap: 1.5rem;
       align-items: flex-start;
+    }
+
+    .list-header h2 {
+      margin: 0;
+      font-size: 1.5rem;
+      color: #f8fafc;
+    }
+
+    .subtitle {
+      margin: 0.25rem 0 0 0;
+      font-size: 0.9rem;
+      color: #94a3b8;
     }
 
     .list-section {
@@ -165,36 +127,44 @@ import { CustomButtonComponent } from '../../../shared/components/custom-button/
       flex: 1;
     }
 
-    .form-section {
-      flex: 1.5;
-      position: sticky;
-      top: 90px;
+    .btn-primary-link {
+      background-color: #3b82f6;
+      color: white;
+      border: none;
+      padding: 0.6rem 1.2rem;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 0.95rem;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.2);
     }
 
-    .list-header h2 {
-      margin: 0;
-      font-size: 1.5rem;
-      color: #0f172a;
+    .btn-primary-link:hover {
+      background-color: #2563eb;
     }
 
-    .subtitle {
-      margin: 0.25rem 0 0 0;
-      font-size: 0.85rem;
-      color: #64748b;
+    .list-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.5rem;
     }
 
     .table-card {
-      background-color: white;
-      border: 1px solid #e2e8f0;
+      background-color: #1e293b;
+      border: 1px solid #334155;
       border-radius: 12px;
       overflow: hidden;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
     }
 
     .loading-state, .empty-state {
       padding: 3rem;
       text-align: center;
-      color: #64748b;
+      color: #94a3b8;
     }
 
     .sucursal-table {
@@ -205,28 +175,28 @@ import { CustomButtonComponent } from '../../../shared/components/custom-button/
     }
 
     .sucursal-table th {
-      background-color: #f8fafc;
+      background-color: #1e293b;
       padding: 1rem 1.5rem;
       font-weight: 600;
-      color: #475569;
-      border-bottom: 1px solid #e2e8f0;
+      color: #94a3b8;
+      border-bottom: 2px solid #334155;
     }
 
     .sucursal-table td {
       padding: 1rem 1.5rem;
-      border-bottom: 1px solid #e2e8f0;
-      color: #334155;
+      border-bottom: 1px solid #334155;
+      color: #f8fafc;
     }
 
     .bold-text {
       font-weight: 600;
-      color: #0f172a;
+      color: #f8fafc;
     }
 
     .district-badge {
       font-size: 0.8rem;
-      background-color: #f1f5f9;
-      color: #475569;
+      background-color: #334155;
+      color: #cbd5e1;
       padding: 0.2rem 0.5rem;
       border-radius: 4px;
       font-weight: 500;
@@ -240,21 +210,21 @@ import { CustomButtonComponent } from '../../../shared/components/custom-button/
     }
 
     .status-pill.activo {
-      background-color: rgba(16, 185, 129, 0.1);
-      color: #059669;
+      background-color: rgba(16, 185, 129, 0.2);
+      color: #34d399;
     }
 
     .status-pill.inactivo {
-      background-color: rgba(239, 68, 68, 0.1);
-      color: #dc2626;
+      background-color: rgba(239, 68, 68, 0.2);
+      color: #f87171;
     }
 
     .actions-col {
-      width: 100px;
+      width: 120px;
       text-align: center;
     }
 
-    .actions-cell {
+    .actions {
       display: flex;
       justify-content: center;
       gap: 0.5rem;
@@ -266,27 +236,18 @@ import { CustomButtonComponent } from '../../../shared/components/custom-button/
       justify-content: center;
       width: 32px;
       height: 32px;
-      border: 1px solid #e2e8f0;
       border-radius: 6px;
-      background-color: white;
+      border: 1px solid transparent;
       cursor: pointer;
-      font-size: 0.85rem;
+      font-size: 0.9rem;
       transition: all 0.2s;
     }
 
-    .action-btn:hover {
-      background-color: #f1f5f9;
-    }
+    .action-btn.edit { color: #60a5fa; background-color: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.2); }
+    .action-btn.edit:hover { background-color: rgba(59, 130, 246, 0.2); }
 
-    .action-btn.edit:hover {
-      color: #f59e0b;
-      border-color: #f59e0b;
-    }
-
-    .action-btn.delete:hover {
-      color: #ef4444;
-      border-color: #ef4444;
-    }
+    .action-btn.delete { color: #f87171; background-color: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); }
+    .action-btn.delete:hover { background-color: rgba(239, 68, 68, 0.2); }
 
     /* Form Styles */
     .form-card {
@@ -409,7 +370,6 @@ import { CustomButtonComponent } from '../../../shared/components/custom-button/
   `]
 })
 export class SucursalesListaComponent implements OnInit {
-  private fb = inject(FormBuilder);
   private mantenimientoService = inject(MantenimientoService);
   private authService = inject(AuthService);
   private cdr = inject(ChangeDetectorRef);
@@ -418,22 +378,9 @@ export class SucursalesListaComponent implements OnInit {
   loading = true;
   isAdmin = false;
 
-  sucursalForm: FormGroup = this.fb.group({
-    nombre: ['', Validators.required],
-    direccion: ['', Validators.required],
-    distrito: ['', Validators.required],
-    activa: [true]
-  });
-
-  esEdicion = false;
-  editingId?: number;
-  formLoading = false;
-  submitted = false;
-  error = '';
-
-  get f() {
-    return this.sucursalForm.controls;
-  }
+  isFormModalOpen = false;
+  isConfirmModalOpen = false;
+  selectedSucursalId?: number;
 
   ngOnInit() {
     this.isAdmin = this.authService.getRole() === 'ADMIN';
@@ -455,73 +402,40 @@ export class SucursalesListaComponent implements OnInit {
     });
   }
 
-  onSubmit() {
-    this.submitted = true;
-    this.error = '';
-
-    if (this.sucursalForm.invalid) {
-      return;
-    }
-
-    this.formLoading = true;
-    const body = this.sucursalForm.value;
-
-    if (this.esEdicion && this.editingId) {
-      this.mantenimientoService.actualizarSucursal(this.editingId, body).subscribe({
-        next: () => {
-          this.formLoading = false;
-          this.cancelarEdicion();
-          this.cargarSucursales();
-        },
-        error: (err) => {
-          this.error = err.error?.message || 'Error al actualizar la sucursal.';
-          this.formLoading = false;
-          this.cdr.detectChanges();
-        }
-      });
-    } else {
-      this.mantenimientoService.crearSucursal(body).subscribe({
-        next: () => {
-          this.formLoading = false;
-          this.sucursalForm.reset({ activa: true });
-          this.submitted = false;
-          this.cargarSucursales();
-        },
-        error: (err) => {
-          this.error = err.error?.message || 'Error al crear la sucursal.';
-          this.formLoading = false;
-          this.cdr.detectChanges();
-        }
-      });
-    }
+  abrirModalCrear() {
+    this.selectedSucursalId = undefined;
+    this.isFormModalOpen = true;
   }
 
-  cargarEdicion(s: Sucursal) {
-    this.esEdicion = true;
-    this.editingId = s.id;
-    this.sucursalForm.patchValue({
-      nombre: s.nombre,
-      direccion: s.direccion,
-      distrito: s.distrito,
-      activa: s.activa
-    });
-    this.cdr.detectChanges();
+  abrirModalEditar(id: number) {
+    this.selectedSucursalId = id;
+    this.isFormModalOpen = true;
   }
 
-  cancelarEdicion() {
-    this.esEdicion = false;
-    this.editingId = undefined;
-    this.sucursalForm.reset({ activa: true });
-    this.submitted = false;
-    this.error = '';
-    this.cdr.detectChanges();
+  abrirModalEliminar(id: number) {
+    this.selectedSucursalId = id;
+    this.isConfirmModalOpen = true;
   }
 
-  desactivarSucursal(id: number | undefined) {
-    if (!id || !confirm('¿Está seguro de desactivar esta sucursal?')) return;
+  cerrarFormModal() {
+    this.isFormModalOpen = false;
+  }
 
-    this.mantenimientoService.desactivarSucursal(id).subscribe({
+  onSucursalGuardada() {
+    this.isFormModalOpen = false;
+    this.cargarSucursales();
+  }
+
+  confirmarEliminacion() {
+    if (!this.selectedSucursalId) return;
+
+    this.mantenimientoService.desactivarSucursal(this.selectedSucursalId).subscribe({
       next: () => {
+        this.isConfirmModalOpen = false;
+        this.cargarSucursales();
+      },
+      error: () => {
+        this.isConfirmModalOpen = false;
         this.cargarSucursales();
       }
     });

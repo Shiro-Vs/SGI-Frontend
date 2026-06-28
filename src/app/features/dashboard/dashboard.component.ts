@@ -10,118 +10,122 @@ import { AuthService } from '../../services/auth.service';
   template: `
     <div class="dashboard-layout">
       <!-- Sidebar -->
-      <aside class="sidebar">
+      <aside class="sidebar" [class.collapsed]="isSidebarCollapsed">
         <div class="brand">
-          <h1>SGI</h1>
-          <span class="badge">v1.0</span>
+          <div class="brand-logo">
+            <h1>SGI</h1>
+            <span class="badge">v1.0</span>
+          </div>
+          <button class="toggle-sidebar-btn" (click)="toggleSidebar()" title="Alternar menú">
+            <i class="bi bi-list"></i>
+          </button>
         </div>
         <nav class="nav-menu">
           <!-- Todos ven Panel Principal -->
-          <a routerLink="/dashboard" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" class="nav-item">
-            <span class="icon">📊</span>
-            Panel Principal
+          <a routerLink="/dashboard/home" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" class="nav-item" title="Resumen">
+            <span class="icon"><i class="bi bi-graph-up"></i></span>
+            <span class="nav-text">Resumen</span>
           </a>
 
           <!-- ADMIN -->
           <ng-container *ngIf="role === 'ADMIN'">
-            <a routerLink="/dashboard/usuarios" routerLinkActive="active" class="nav-item">
-              <span class="icon">👥</span>
-              Usuarios
+            <a routerLink="/dashboard/usuarios" routerLinkActive="active" class="nav-item" title="Usuarios">
+              <span class="icon"><i class="bi bi-people"></i></span>
+              <span class="nav-text">Usuarios</span>
             </a>
-            <a routerLink="/dashboard/sucursales" routerLinkActive="active" class="nav-item">
-              <span class="icon">🏢</span>
-              Sucursales
+            <a routerLink="/dashboard/sucursales" routerLinkActive="active" class="nav-item" title="Sucursales">
+              <span class="icon"><i class="bi bi-building"></i></span>
+              <span class="nav-text">Sucursales</span>
             </a>
-            <a routerLink="/dashboard/categorias" routerLinkActive="active" class="nav-item">
-              <span class="icon">🏷️</span>
-              Categorías
+            <a routerLink="/dashboard/categorias" routerLinkActive="active" class="nav-item" title="Categorías">
+              <span class="icon"><i class="bi bi-tags"></i></span>
+              <span class="nav-text">Categorías</span>
             </a>
-            <a routerLink="/dashboard/productos" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" class="nav-item">
-              <span class="icon">📦</span>
-              Productos
+            <a routerLink="/dashboard/productos" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" class="nav-item" title="Productos">
+              <span class="icon"><i class="bi bi-box-seam"></i></span>
+              <span class="nav-text">Productos</span>
             </a>
-            <a routerLink="/dashboard/movimientos/historial" routerLinkActive="active" class="nav-item">
-              <span class="icon">🔄</span>
-              Movimientos
+            <a routerLink="/dashboard/movimientos/historial" routerLinkActive="active" class="nav-item" title="Movimientos">
+              <span class="icon"><i class="bi bi-arrow-left-right"></i></span>
+              <span class="nav-text">Movimientos</span>
             </a>
-            <a routerLink="/dashboard/productos/bajo-stock" routerLinkActive="active" class="nav-item">
-              <span class="icon">⚠️</span>
-              Alertas (Stock Bajo)
+            <a routerLink="/dashboard/productos/bajo-stock" routerLinkActive="active" class="nav-item" title="Alertas (Stock Bajo)">
+              <span class="icon"><i class="bi bi-exclamation-triangle"></i></span>
+              <span class="nav-text">Alertas (Stock Bajo)</span>
             </a>
           </ng-container>
 
           <!-- JEFE_ALMACEN -->
           <ng-container *ngIf="role === 'JEFE_ALMACEN'">
-            <a routerLink="/dashboard/productos" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" class="nav-item">
-              <span class="icon">📦</span>
-              Productos
+            <a routerLink="/dashboard/productos" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" class="nav-item" title="Productos">
+              <span class="icon"><i class="bi bi-box-seam"></i></span>
+              <span class="nav-text">Productos</span>
             </a>
-            <a routerLink="/dashboard/productos/bajo-stock" routerLinkActive="active" class="nav-item">
-              <span class="icon">⚠️</span>
-              Stock Bajo
+            <a routerLink="/dashboard/productos/bajo-stock" routerLinkActive="active" class="nav-item" title="Stock Bajo">
+              <span class="icon"><i class="bi bi-exclamation-triangle"></i></span>
+              <span class="nav-text">Stock Bajo</span>
             </a>
-            <a routerLink="/dashboard/movimientos/entrada" routerLinkActive="active" class="nav-item">
-              <span class="icon">📥</span>
-              Entradas
+            <a routerLink="/dashboard/movimientos/entrada" routerLinkActive="active" class="nav-item" title="Entrada de Stock">
+              <span class="icon"><i class="bi bi-box-arrow-in-down"></i></span>
+              <span class="nav-text">Entrada de Stock</span>
             </a>
-            <a routerLink="/dashboard/movimientos/transferencia" routerLinkActive="active" class="nav-item">
-              <span class="icon">🚚</span>
-              Transferencias
+            <a routerLink="/dashboard/movimientos/transferencia" routerLinkActive="active" class="nav-item" title="Transferencias">
+              <span class="icon"><i class="bi bi-truck"></i></span>
+              <span class="nav-text">Transferencias</span>
             </a>
           </ng-container>
 
           <!-- VENDEDOR -->
           <ng-container *ngIf="role === 'VENDEDOR'">
-            <a routerLink="/dashboard/productos" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" class="nav-item">
-              <span class="icon">📦</span>
-              Productos
+            <a routerLink="/dashboard/productos" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" class="nav-item" title="Productos">
+              <span class="icon"><i class="bi bi-box-seam"></i></span>
+              <span class="nav-text">Productos</span>
             </a>
-            <a routerLink="/dashboard/movimientos/salida" routerLinkActive="active" class="nav-item">
-              <span class="icon">📤</span>
-              Registrar Salida
+            <a routerLink="/dashboard/movimientos/salida" routerLinkActive="active" class="nav-item" title="Salida (Ventas)">
+              <span class="icon"><i class="bi bi-box-arrow-up"></i></span>
+              <span class="nav-text">Salida (Ventas)</span>
             </a>
           </ng-container>
 
           <!-- GERENTE -->
           <ng-container *ngIf="role === 'GERENTE'">
-            <a routerLink="/dashboard/productos" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" class="nav-item">
-              <span class="icon">📦</span>
-              Ver Productos
+            <a routerLink="/dashboard/productos" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" class="nav-item" title="Ver Productos">
+              <span class="icon"><i class="bi bi-box-seam"></i></span>
+              <span class="nav-text">Ver Productos</span>
             </a>
-            <a routerLink="/dashboard/productos/bajo-stock" routerLinkActive="active" class="nav-item">
-              <span class="icon">⚠️</span>
-              Stock Bajo
+            <a routerLink="/dashboard/productos/bajo-stock" routerLinkActive="active" class="nav-item" title="Stock Bajo">
+              <span class="icon"><i class="bi bi-exclamation-triangle"></i></span>
+              <span class="nav-text">Stock Bajo</span>
             </a>
-            <a routerLink="/dashboard/movimientos/historial" routerLinkActive="active" class="nav-item">
-              <span class="icon">🔄</span>
-              Historial Movimientos
+            <a routerLink="/dashboard/movimientos/historial" routerLinkActive="active" class="nav-item" title="Historial Movimientos">
+              <span class="icon"><i class="bi bi-arrow-left-right"></i></span>
+              <span class="nav-text">Historial Movimientos</span>
             </a>
           </ng-container>
         </nav>
         <div class="user-profile">
-          <div class="avatar">{{ currentUser?.nombre?.charAt(0) || 'U' }}</div>
+          <div class="avatar" [title]="currentUser?.nombre">{{ currentUser?.nombre?.charAt(0) || 'U' }}</div>
           <div class="user-info">
             <span class="username">{{ currentUser?.nombre || 'Usuario SGI' }}</span>
             <span class="role">{{ getRoleLabel(role) }}</span>
           </div>
           <button (click)="logout()" class="logout-btn" title="Cerrar sesión">
-            🚪
+            <i class="bi bi-box-arrow-right"></i>
           </button>
         </div>
       </aside>
 
       <!-- Main Content Area -->
-      <div class="main-wrapper">
+      <div class="main-wrapper" [class.collapsed]="isSidebarCollapsed">
         <!-- Top Navbar -->
         <header class="navbar">
           <div class="navbar-title">
             <h2>Sistema de Gestión Interna</h2>
           </div>
           <div class="navbar-actions">
-            <span class="notification-bell">🔔</span>
             <div class="status-indicator">
               <span class="dot online"></span>
-              Servidor Conectado
+              En línea
             </div>
           </div>
         </header>
@@ -136,44 +140,67 @@ import { AuthService } from '../../services/auth.service';
   styles: [`
     .dashboard-layout {
       display: flex;
-      min-height: 100vh;
-      background-color: #f8fafc;
+      height: 100vh;
+      background-color: #0b1121;
       font-family: 'Outfit', 'Inter', sans-serif;
     }
 
-    /* Sidebar Styles */
     .sidebar {
       width: 260px;
       background-color: #0f172a;
-      color: #f8fafc;
+      color: white;
       display: flex;
       flex-direction: column;
-      border-right: 1px solid #1e293b;
+      box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+      z-index: 10;
       position: fixed;
       height: 100vh;
-      z-index: 10;
+      transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      overflow: hidden;
+    }
+
+    .sidebar.collapsed {
+      width: 80px;
     }
 
     .brand {
-      padding: 1.5rem 2rem;
+      height: 70px;
+      padding: 0 1.25rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid #1e293b;
+      box-sizing: border-box;
+      white-space: nowrap;
+    }
+
+    .brand-logo {
       display: flex;
       align-items: center;
       gap: 0.5rem;
-      border-bottom: 1px solid #1e293b;
+    }
+
+    .sidebar.collapsed .brand {
+      padding: 0;
+      justify-content: center;
+    }
+
+    .sidebar.collapsed .brand-logo {
+      display: none;
     }
 
     .brand h1 {
       font-size: 1.5rem;
       font-weight: 800;
       margin: 0;
-      color: #6366f1;
+      color: #3b82f6;
       letter-spacing: -0.05em;
     }
 
     .badge {
       font-size: 0.7rem;
-      background-color: rgba(99, 102, 241, 0.2);
-      color: #818cf8;
+      background-color: rgba(59, 130, 246, 0.2);
+      color: #60a5fa;
       padding: 0.2rem 0.5rem;
       border-radius: 9999px;
       font-weight: 600;
@@ -186,32 +213,69 @@ import { AuthService } from '../../services/auth.service';
       flex-direction: column;
       gap: 0.5rem;
       overflow-y: auto;
+      overflow-x: hidden;
+    }
+
+    .sidebar.collapsed .nav-menu {
+      padding: 1.5rem 0.5rem;
     }
 
     .nav-item {
       display: flex;
       align-items: center;
-      gap: 0.75rem;
       padding: 0.75rem 1rem;
-      color: #94a3b8;
+      color: #cbd5e1;
       text-decoration: none;
       border-radius: 8px;
+      transition: all 0.2s;
+      font-size: 0.95rem;
       font-weight: 500;
-      transition: all 0.2s ease-in-out;
+      gap: 0.75rem;
+      white-space: nowrap;
+    }
+
+    .sidebar.collapsed .nav-item {
+      justify-content: center;
+      padding: 0.75rem 0;
+    }
+
+    .sidebar.collapsed .nav-text {
+      display: none;
     }
 
     .nav-item:hover {
       background-color: #1e293b;
-      color: #f8fafc;
-    }
-
-    .nav-item.active {
-      background-color: #4f46e5;
       color: white;
     }
 
+    .nav-item.active {
+      background-color: #1e293b;
+      color: white;
+      border-left: 4px solid #3b82f6;
+    }
+
+    .sidebar.collapsed .nav-item.active {
+      border-left: none;
+      background-color: #1e293b;
+      position: relative;
+    }
+
+    .sidebar.collapsed .nav-item.active::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 10%;
+      height: 80%;
+      width: 4px;
+      background-color: #3b82f6;
+      border-radius: 0 4px 4px 0;
+    }
+
     .nav-item .icon {
-      font-size: 1.2rem;
+      font-size: 1.25rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
     .user-profile {
@@ -221,18 +285,30 @@ import { AuthService } from '../../services/auth.service';
       align-items: center;
       gap: 0.75rem;
       background-color: #0b0f19;
+      white-space: nowrap;
+    }
+
+    .sidebar.collapsed .user-profile {
+      flex-direction: column;
+      padding: 1.25rem 0.5rem;
+      gap: 1rem;
+    }
+
+    .sidebar.collapsed .user-info {
+      display: none;
     }
 
     .avatar {
       width: 40px;
       height: 40px;
       border-radius: 50%;
-      background-color: #6366f1;
+      background-color: #3b82f6;
       display: flex;
       align-items: center;
       justify-content: center;
       font-weight: 700;
       color: white;
+      flex-shrink: 0;
     }
 
     .user-info {
@@ -245,7 +321,7 @@ import { AuthService } from '../../services/auth.service';
     .username {
       font-size: 0.85rem;
       font-weight: 600;
-      color: #f8fafc;
+      color: white;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -272,20 +348,23 @@ import { AuthService } from '../../services/auth.service';
       color: #ef4444;
     }
 
-    /* Main wrapper */
     .main-wrapper {
       flex: 1;
       margin-left: 260px;
       display: flex;
       flex-direction: column;
       min-height: 100vh;
+      transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
-    /* Navbar Styles */
+    .main-wrapper.collapsed {
+      margin-left: 80px;
+    }
+
     .navbar {
       height: 70px;
-      background-color: white;
-      border-bottom: 1px solid #e2e8f0;
+      background-color: #0f172a;
+      border-bottom: 1px solid #1e293b;
       padding: 0 2rem;
       display: flex;
       align-items: center;
@@ -295,10 +374,32 @@ import { AuthService } from '../../services/auth.service';
       z-index: 5;
     }
 
+    .navbar-title {
+      display: flex;
+      align-items: center;
+    }
+    
+    .toggle-sidebar-btn {
+      background: none;
+      border: none;
+      color: #cbd5e1;
+      font-size: 1.5rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.25rem;
+      transition: color 0.2s;
+    }
+
+    .toggle-sidebar-btn:hover {
+      color: #3b82f6;
+    }
+
     .navbar-title h2 {
       font-size: 1.15rem;
       font-weight: 600;
-      color: #1e293b;
+      color: #f8fafc;
       margin: 0;
     }
 
@@ -308,27 +409,17 @@ import { AuthService } from '../../services/auth.service';
       gap: 1.5rem;
     }
 
-    .notification-bell {
-      font-size: 1.25rem;
-      cursor: pointer;
-      color: #64748b;
-      transition: color 0.2s;
-    }
-
-    .notification-bell:hover {
-      color: #4f46e5;
-    }
-
     .status-indicator {
       display: flex;
       align-items: center;
       gap: 0.5rem;
       font-size: 0.8rem;
-      color: #64748b;
-      background-color: #f1f5f9;
+      color: #cbd5e1;
+      background-color: #1e293b;
       padding: 0.35rem 0.75rem;
       border-radius: 9999px;
       font-weight: 500;
+      border: 1px solid #334155;
     }
 
     .dot {
@@ -353,6 +444,11 @@ export class DashboardComponent {
   private authService = inject(AuthService);
   currentUser = this.authService.getUser();
   role = this.authService.getRole();
+  isSidebarCollapsed = false;
+
+  toggleSidebar() {
+    this.isSidebarCollapsed = !this.isSidebarCollapsed;
+  }
 
   logout() {
     this.authService.logout();

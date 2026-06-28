@@ -9,16 +9,20 @@ import { Producto } from '../core/models/producto.model';
 export class ProductoService {
   private api = inject(ApiService);
 
-  listarTodos(): Observable<Producto[]> {
-    return this.api.get<Producto[]>('productos');
+  listarTodos(sucursalId?: number): Observable<Producto[]> {
+    const params: any = {};
+    if (sucursalId) params.sucursalId = sucursalId;
+    return this.api.get<Producto[]>('productos', params);
   }
 
   obtenerPorId(id: number): Observable<Producto> {
     return this.api.get<Producto>(`productos/${id}`);
   }
 
-  buscarPorNombre(nombre: string): Observable<Producto[]> {
-    return this.api.get<Producto[]>('productos/buscar', { nombre });
+  buscarPorNombre(nombre: string, sucursalId?: number): Observable<Producto[]> {
+    const params: any = { nombre };
+    if (sucursalId) params.sucursalId = sucursalId;
+    return this.api.get<Producto[]>('productos/buscar', params);
   }
 
   listarBajoStock(): Observable<Producto[]> {

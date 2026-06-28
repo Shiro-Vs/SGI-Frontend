@@ -1,13 +1,15 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { MovimientoService } from '../../../services/movimiento.service';
 import { ProductoService } from '../../../services/producto.service';
 import { MantenimientoService } from '../../../services/mantenimiento.service';
+import { AuthService } from '../../../services/auth.service';
 import { Producto } from '../../../core/models/producto.model';
 import { Sucursal } from '../../../core/models/sucursal.model';
 import { CustomButtonComponent } from '../../../shared/components/custom-button/custom-button.component';
+import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-movimiento-transferencia',
@@ -119,7 +121,7 @@ import { CustomButtonComponent } from '../../../shared/components/custom-button/
           </div>
 
           <div class="form-actions">
-            <a routerLink="/dashboard" class="btn-secondary">
+            <a routerLink="/dashboard" class="btn-secondary" [class.disabled]="loading">
               Cancelar
             </a>
             <app-custom-button
@@ -144,21 +146,21 @@ import { CustomButtonComponent } from '../../../shared/components/custom-button/
     .form-header h2 {
       margin: 0;
       font-size: 1.5rem;
-      color: #2563eb;
+      color: #3b82f6;
     }
 
     .subtitle {
       margin: 0.25rem 0 0 0;
       font-size: 0.9rem;
-      color: #64748b;
+      color: #94a3b8;
     }
 
     .form-card {
-      background-color: white;
-      border: 1px solid #e2e8f0;
+      background-color: #1e293b;
+      border: 1px solid #334155;
       border-radius: 12px;
       padding: 2rem;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
     }
 
     .form-grid {
@@ -180,30 +182,30 @@ import { CustomButtonComponent } from '../../../shared/components/custom-button/
     .form-group label {
       font-size: 0.85rem;
       font-weight: 600;
-      color: #475569;
+      color: #94a3b8;
     }
 
     .form-control {
       width: 100%;
       padding: 0.75rem 1rem;
-      background-color: #f8fafc;
-      border: 1px solid #e2e8f0;
+      background-color: #0f172a;
+      border: 1px solid #334155;
       border-radius: 8px;
       font-size: 0.95rem;
+      color: #f8fafc;
       box-sizing: border-box;
       transition: all 0.2s;
     }
 
     .form-control:focus {
       outline: none;
-      border-color: #2563eb;
-      background-color: white;
-      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
     }
 
     .form-control.is-invalid {
       border-color: #ef4444;
-      background-color: #fef2f2;
+      background-color: rgba(239, 68, 68, 0.1);
     }
 
     .invalid-feedback {
@@ -217,9 +219,9 @@ import { CustomButtonComponent } from '../../../shared/components/custom-button/
     }
 
     .alert-error {
-      background-color: #fef2f2;
-      border: 1px solid #fee2e2;
-      color: #ef4444;
+      background-color: rgba(239, 68, 68, 0.1);
+      border: 1px solid rgba(239, 68, 68, 0.2);
+      color: #f87171;
       padding: 0.75rem;
       border-radius: 8px;
       font-size: 0.85rem;
@@ -232,7 +234,7 @@ import { CustomButtonComponent } from '../../../shared/components/custom-button/
       justify-content: flex-end;
       gap: 1rem;
       margin-top: 2rem;
-      border-top: 1px solid #e2e8f0;
+      border-top: 1px solid #334155;
       padding-top: 1.5rem;
     }
 
@@ -240,9 +242,9 @@ import { CustomButtonComponent } from '../../../shared/components/custom-button/
       display: inline-flex;
       align-items: center;
       padding: 0.6rem 1.25rem;
-      background-color: white;
-      border: 1px solid #cbd5e1;
-      color: #475569;
+      background-color: #1e293b;
+      border: 1px solid #334155;
+      color: #cbd5e1;
       font-weight: 600;
       font-size: 0.9rem;
       border-radius: 8px;
@@ -250,9 +252,19 @@ import { CustomButtonComponent } from '../../../shared/components/custom-button/
       transition: all 0.2s;
     }
 
-    .btn-secondary:hover {
+    .btn-secondary:hover:not(.disabled) {
+      background-color: #334155;
+      border-color: #475569;
+    }
+
+    .btn-secondary:hover:not(.disabled) {
       background-color: #f8fafc;
       border-color: #94a3b8;
+    }
+
+    .btn-secondary.disabled {
+      opacity: 0.6;
+      pointer-events: none;
     }
   `]
 })
@@ -262,6 +274,8 @@ export class MovimientoTransferenciaComponent implements OnInit {
   private productoService = inject(ProductoService);
   private mantenimientoService = inject(MantenimientoService);
   private router = inject(Router);
+  private authService = inject(AuthService);
+  private cdr = inject(ChangeDetectorRef);
 
   transferenciaForm: FormGroup = this.fb.group({
     productoId: ['', Validators.required],
@@ -284,12 +298,19 @@ export class MovimientoTransferenciaComponent implements OnInit {
   ngOnInit() {
     this.cargarProductos();
     this.cargarSucursales();
+
+    const user = this.authService.getUser();
+    if (user && user.rol === 'JEFE_ALMACEN' && user.sucursalId) {
+      this.transferenciaForm.patchValue({ sucursalOrigenId: user.sucursalId });
+      this.transferenciaForm.get('sucursalOrigenId')?.disable();
+    }
   }
 
   cargarProductos() {
     this.productoService.listarTodos().subscribe({
       next: (data) => {
         this.productos = data.filter(p => p.activo);
+        this.cdr.detectChanges();
       }
     });
   }
@@ -298,6 +319,7 @@ export class MovimientoTransferenciaComponent implements OnInit {
     this.mantenimientoService.listarSucursales().subscribe({
       next: (data) => {
         this.sucursales = data.filter(s => s.activa);
+        this.cdr.detectChanges();
       }
     });
   }
@@ -320,17 +342,29 @@ export class MovimientoTransferenciaComponent implements OnInit {
     }
 
     this.loading = true;
+    
+    // Usar getRawValue() para incluir campos deshabilitados (como sucursalOrigenId bloqueado para jefe de almacén)
+    const formValues = this.transferenciaForm.getRawValue();
+    
     const body = {
-      productoId: +this.f['productoId'].value,
-      sucursalOrigenId: +this.f['sucursalOrigenId'].value,
-      sucursalDestinoId: +this.f['sucursalDestinoId'].value,
-      cantidad: +this.f['cantidad'].value,
-      observacion: this.f['observacion'].value
+      productoId: +formValues.productoId,
+      sucursalOrigenId: +formValues.sucursalOrigenId,
+      sucursalDestinoId: +formValues.sucursalDestinoId,
+      cantidad: +formValues.cantidad,
+      observacion: formValues.observacion
     };
 
     this.movimientoService.registrarTransferencia(body).subscribe({
       next: () => {
-        this.router.navigate(['/dashboard/productos']);
+        this.loading = false;
+        Swal.fire({
+          title: '¡Operación exitosa!',
+          text: 'Transferencia registrada correctamente.',
+          icon: 'success',
+          confirmButtonText: 'Aceptar'
+        }).then(() => {
+          this.router.navigate(['/dashboard/productos']);
+        });
       },
       error: (err) => {
         this.error = err.error?.message || 'Error al registrar la transferencia. Verifique si la sucursal de origen tiene stock suficiente.';

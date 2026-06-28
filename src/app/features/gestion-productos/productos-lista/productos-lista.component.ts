@@ -1,17 +1,20 @@
 import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { ProductoService } from '../../../services/producto.service';
+import { MantenimientoService } from '../../../services/mantenimiento.service';
 import { AuthService } from '../../../services/auth.service';
 import { Producto } from '../../../core/models/producto.model';
 import { EstadoPipe } from '../../../shared/pipes/estado.pipe';
+import { ModalComponent } from '../../../shared/components/modal/modal.component';
+import { ConfirmModalComponent } from '../../../shared/components/confirm-modal/confirm-modal.component';
+import { ProductoFormularioComponent } from '../producto-formulario/producto-formulario.component';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 
 @Component({
   selector: 'app-productos-lista',
   standalone: true,
-  imports: [CommonModule, RouterLink, ReactiveFormsModule, EstadoPipe],
+  imports: [CommonModule, ReactiveFormsModule, EstadoPipe, ModalComponent, ConfirmModalComponent, ProductoFormularioComponent],
   template: `
     <div class="product-list-container">
       <div class="list-header">
@@ -19,23 +22,29 @@ import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
           <h2>Gestión de Productos</h2>
           <p class="subtitle">Lista general y administración del catálogo de productos.</p>
         </div>
-        <div *ngIf="isAdmin">
-          <a routerLink="nuevo" class="btn-primary-link">
-            ➕ Nuevo Producto
-          </a>
-        </div>
+          <div class="header-actions">
+            <button *ngIf="isAdmin" (click)="abrirModalCrear()" class="btn-primary-link">
+              <i class="bi bi-plus-circle"></i> Nuevo Producto
+            </button>
+          </div>
       </div>
 
       <div class="filter-card">
         <form [formGroup]="searchForm" class="search-form">
           <div class="form-group-search">
-            <span class="search-icon">🔍</span>
+            <span class="search-icon"><i class="bi bi-search"></i></span>
             <input
               type="text"
               formControlName="nombre"
               placeholder="Buscar producto por nombre..."
               class="form-control-search"
             />
+          </div>
+          <div class="form-group-filter" *ngIf="isAdmin || isGerente">
+            <select formControlName="sucursalId" class="form-control-select">
+              <option value="">Todas las sucursales</option>
+              <option *ngFor="let s of sucursales" [value]="s.id">{{ s.nombre }}</option>
+            </select>
           </div>
         </form>
       </div>
@@ -61,6 +70,7 @@ import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
                 <th>P. Venta</th>
                 <th>U. Medida</th>
                 <th>Mín/Máx</th>
+                <th>{{ searchForm.value.sucursalId ? 'Stock Local' : 'Stock Total' }}</th>
                 <th>Estado</th>
                 <th class="actions-col" *ngIf="isAdmin">Acciones</th>
               </tr>
@@ -82,19 +92,50 @@ import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
                   </span>
                 </td>
                 <td>
+                  <span class="stock-actual-badge" *ngIf="p.stockActual !== undefined && p.stockActual !== null">
+                    {{ p.stockActual }}
+                  </span>
+                  <span class="text-muted" *ngIf="p.stockActual === undefined || p.stockActual === null">Global</span>
+                </td>
+                <td>
                   <span class="status-pill" [ngClass]="p.activo ? 'activo' : 'inactivo'">
                     {{ p.activo | estado }}
                   </span>
                 </td>
-                <td class="actions-cell" *ngIf="isAdmin">
-                  <a [routerLink]="['editar', p.id]" class="action-btn edit" title="Editar">✏️</a>
-                  <button (click)="eliminarProducto(p.id)" class="action-btn delete" title="Desactivar">🗑️</button>
+                <td class="actions" *ngIf="isAdmin">
+                  <button (click)="abrirModalEditar(p.id!)" class="action-btn edit" title="Editar"><i class="bi bi-pencil"></i></button>
+                  <button (click)="abrirModalEliminar(p.id!)" class="action-btn delete" title="Desactivar"><i class="bi bi-trash"></i></button>
                 </td>
               </tr>
             </tbody>
           </table>
         </div>
       </div>
+
+      <app-modal
+        [isOpen]="isFormModalOpen"
+        [title]="selectedProductoId ? 'Editar Producto' : 'Nuevo Producto'"
+        width="720px"
+        (close)="cerrarFormModal()"
+      >
+        <app-producto-formulario
+          *ngIf="isFormModalOpen"
+          [esEdicion]="!!selectedProductoId"
+          [productoId]="selectedProductoId"
+          (guardado)="onProductoGuardado()"
+          (cancelado)="cerrarFormModal()"
+        ></app-producto-formulario>
+      </app-modal>
+
+      <app-confirm-modal
+        [isOpen]="isConfirmModalOpen"
+        title="Desactivar Producto"
+        message="¿Está seguro de que desea desactivar este producto? Ya no aparecerá en el catálogo activo."
+        confirmText="Desactivar"
+        confirmStyle="delete"
+        (confirm)="confirmarEliminacion()"
+        (cancel)="isConfirmModalOpen = false"
+      ></app-confirm-modal>
     </div>
   `,
   styles: [`
@@ -113,38 +154,36 @@ import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
     .list-header h2 {
       margin: 0;
       font-size: 1.5rem;
-      color: #0f172a;
+      color: #f8fafc;
     }
 
     .subtitle {
       margin: 0.25rem 0 0 0;
       font-size: 0.9rem;
-      color: #64748b;
+      color: #94a3b8;
     }
 
     .btn-primary-link {
+      background-color: #3b82f6;
+      color: white;
+      border: none;
+      padding: 0.6rem 1.2rem;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 0.95rem;
+      cursor: pointer;
       display: inline-flex;
       align-items: center;
-      padding: 0.6rem 1.25rem;
-      background-color: #4f46e5;
-      color: white;
-      font-weight: 600;
-      font-size: 0.9rem;
-      border-radius: 8px;
-      text-decoration: none;
-      transition: background-color 0.2s;
+      gap: 0.5rem;
+      box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.2);
     }
 
     .btn-primary-link:hover {
-      background-color: #4338ca;
+      background-color: #2563eb;
     }
 
     .filter-card {
-      background-color: white;
-      border: 1px solid #e2e8f0;
-      border-radius: 12px;
-      padding: 1rem;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+      margin-bottom: 0.5rem;
     }
 
     .search-form {
@@ -168,33 +207,55 @@ import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
     .form-control-search {
       width: 100%;
       padding: 0.75rem 1rem 0.75rem 2.5rem;
-      background-color: #f8fafc;
-      border: 1px solid #e2e8f0;
+      background-color: #0f172a;
+      border: 1px solid #334155;
       border-radius: 8px;
       font-size: 0.95rem;
+      color: #f8fafc;
       box-sizing: border-box;
       transition: all 0.2s;
     }
 
     .form-control-search:focus {
       outline: none;
-      border-color: #4f46e5;
-      background-color: white;
-      box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+    }
+
+    .form-group-filter {
+      min-width: 250px;
+    }
+
+    .form-control-select {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      background-color: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      color: #f8fafc;
+      box-sizing: border-box;
+      transition: all 0.2s;
+    }
+
+    .form-control-select:focus {
+      outline: none;
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
     }
 
     .table-card {
-      background-color: white;
-      border: 1px solid #e2e8f0;
+      background-color: #1e293b;
+      border: 1px solid #334155;
       border-radius: 12px;
       overflow: hidden;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
     }
 
     .loading-state, .empty-state {
       padding: 3rem;
       text-align: center;
-      color: #64748b;
+      color: #94a3b8;
     }
 
     .table-responsive {
@@ -209,23 +270,23 @@ import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
     }
 
     .product-table th {
-      background-color: #f8fafc;
+      background-color: #1e293b;
       padding: 1rem 1.5rem;
       font-weight: 600;
-      color: #475569;
-      border-bottom: 1px solid #e2e8f0;
+      color: #94a3b8;
+      border-bottom: 2px solid #334155;
       white-space: nowrap;
     }
 
     .product-table td {
       padding: 1rem 1.5rem;
-      border-bottom: 1px solid #e2e8f0;
-      color: #334155;
+      border-bottom: 1px solid #334155;
+      color: #f8fafc;
     }
 
     .bold-text {
       font-weight: 600;
-      color: #0f172a;
+      color: #f8fafc;
     }
 
     .code-font {
@@ -248,6 +309,24 @@ import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
       color: #475569;
     }
 
+    .stock-actual-badge {
+      font-size: 0.85rem;
+      font-weight: 700;
+      padding: 0.25rem 0.6rem;
+      background-color: rgba(56, 189, 248, 0.15);
+      color: #38bdf8;
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      border-radius: 6px;
+      display: inline-block;
+      min-width: 2.5rem;
+      text-align: center;
+    }
+
+    .text-muted {
+      color: #64748b;
+      font-size: 0.8rem;
+    }
+
     .status-pill {
       font-size: 0.75rem;
       font-weight: 600;
@@ -256,21 +335,21 @@ import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
     }
 
     .status-pill.activo {
-      background-color: rgba(16, 185, 129, 0.1);
-      color: #059669;
+      background-color: rgba(16, 185, 129, 0.2);
+      color: #34d399;
     }
 
     .status-pill.inactivo {
-      background-color: rgba(239, 68, 68, 0.1);
-      color: #dc2626;
+      background-color: rgba(239, 68, 68, 0.2);
+      color: #f87171;
     }
 
     .actions-col {
-      width: 100px;
+      width: 120px;
       text-align: center;
     }
 
-    .actions-cell {
+    .actions {
       display: flex;
       justify-content: center;
       gap: 0.5rem;
@@ -283,57 +362,69 @@ import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
       width: 32px;
       height: 32px;
       border-radius: 6px;
-      border: 1px solid #e2e8f0;
-      background-color: white;
+      border: 1px solid transparent;
       cursor: pointer;
       font-size: 0.9rem;
-      text-decoration: none;
       transition: all 0.2s;
     }
 
-    .action-btn:hover {
-      background-color: #f1f5f9;
-    }
+    .action-btn.edit { color: #60a5fa; background-color: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.2); }
+    .action-btn.edit:hover { background-color: rgba(59, 130, 246, 0.2); }
 
-    .action-btn.edit:hover {
-      color: #f59e0b;
-      border-color: #f59e0b;
-    }
-
-    .action-btn.delete:hover {
-      color: #ef4444;
-      border-color: #ef4444;
-    }
+    .action-btn.delete { color: #f87171; background-color: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); }
+    .action-btn.delete:hover { background-color: rgba(239, 68, 68, 0.2); }
   `]
 })
 export class ProductosListaComponent implements OnInit {
   private productoService = inject(ProductoService);
+  private mantenimientoService = inject(MantenimientoService);
   private authService = inject(AuthService);
   private fb = inject(FormBuilder);
   private cdr = inject(ChangeDetectorRef);
 
   productos: Producto[] = [];
+  sucursales: any[] = [];
   loading = true;
   isAdmin = false;
-  searchForm: FormGroup = this.fb.group({
-    nombre: ['']
-  });
+  isGerente = false;
+  isFormModalOpen = false;
+  isConfirmModalOpen = false;
+  selectedProductoId?: number;
+  searchForm: FormGroup = this.fb.group({ nombre: [''], sucursalId: [''] });
 
   ngOnInit() {
-    this.isAdmin = this.authService.getRole() === 'ADMIN';
+    const rol = this.authService.getRole();
+    this.isAdmin = rol === 'ADMIN';
+    this.isGerente = rol === 'GERENTE';
+    
+    if (this.isAdmin || this.isGerente) {
+      this.cargarSucursales();
+    }
+
     this.cargarProductos();
 
-    this.searchForm.get('nombre')?.valueChanges.pipe(
+    this.searchForm.valueChanges.pipe(
       debounceTime(300),
-      distinctUntilChanged()
+      distinctUntilChanged((prev, curr) => JSON.stringify(prev) === JSON.stringify(curr))
     ).subscribe(val => {
-      this.buscarProductos(val);
+      this.buscarProductos(val.nombre, val.sucursalId ? Number(val.sucursalId) : undefined);
+    });
+  }
+
+  cargarSucursales() {
+    this.mantenimientoService.listarSucursales().subscribe({
+      next: (data) => {
+        this.sucursales = data;
+        this.cdr.detectChanges();
+      }
     });
   }
 
   cargarProductos() {
     this.loading = true;
-    this.productoService.listarTodos().subscribe({
+    const sucursalId = this.searchForm.value.sucursalId ? Number(this.searchForm.value.sucursalId) : undefined;
+    
+    this.productoService.listarTodos(sucursalId).subscribe({
       next: (data) => {
         this.productos = data;
         this.loading = false;
@@ -346,39 +437,58 @@ export class ProductosListaComponent implements OnInit {
     });
   }
 
-  buscarProductos(nombre: string) {
-    if (!nombre.trim()) {
+  buscarProductos(nombre: string, sucursalId?: number) {
+    if (!nombre?.trim() && !sucursalId) {
       this.cargarProductos();
       return;
     }
     this.loading = true;
-    this.productoService.buscarPorNombre(nombre).subscribe({
-      next: (data) => {
-        this.productos = data;
-        this.loading = false;
-        this.cdr.detectChanges();
-      },
-      error: () => {
-        this.loading = false;
-        this.cdr.detectChanges();
-      }
-    });
+    
+    if (nombre?.trim()) {
+      this.productoService.buscarPorNombre(nombre, sucursalId).subscribe({
+        next: (data) => { this.productos = data; this.loading = false; this.cdr.detectChanges(); },
+        error: () => { this.loading = false; this.cdr.detectChanges(); }
+      });
+    } else {
+      this.productoService.listarTodos(sucursalId).subscribe({
+        next: (data) => { this.productos = data; this.loading = false; this.cdr.detectChanges(); },
+        error: () => { this.loading = false; this.cdr.detectChanges(); }
+      });
+    }
   }
 
-  eliminarProducto(id: number | undefined) {
-    if (!id || !confirm('¿Está seguro de desactivar este producto?')) return;
+  abrirModalCrear() {
+    this.selectedProductoId = undefined;
+    this.isFormModalOpen = true;
+  }
 
-    this.productoService.desactivar(id).subscribe({
-      next: () => {
-        this.cargarProductos();
-      }
+  abrirModalEditar(id: number) {
+    this.selectedProductoId = id;
+    this.isFormModalOpen = true;
+  }
+
+  abrirModalEliminar(id: number) {
+    this.selectedProductoId = id;
+    this.isConfirmModalOpen = true;
+  }
+
+  cerrarFormModal() { this.isFormModalOpen = false; }
+
+  onProductoGuardado() {
+    this.isFormModalOpen = false;
+    this.cargarProductos();
+  }
+
+  confirmarEliminacion() {
+    if (!this.selectedProductoId) return;
+    this.productoService.desactivar(this.selectedProductoId).subscribe({
+      next: () => { this.isConfirmModalOpen = false; this.cargarProductos(); },
+      error: () => { this.isConfirmModalOpen = false; this.cargarProductos(); }
     });
   }
 
   getCategoryName(p: Producto): string {
-    if (p.categoria && typeof p.categoria === 'object') {
-      return p.categoria.nombre;
-    }
+    if (p.categoria && typeof p.categoria === 'object') return p.categoria.nombre;
     return (p.categoria as string) || '-';
   }
 }

@@ -39,23 +39,35 @@ import { CommonModule } from '@angular/common';
     }
 
     .primary {
-      background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+      background: #10b981; /* Green for create/save actions */
       color: white;
-      box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.2), 0 2px 4px -1px rgba(79, 70, 229, 0.1);
+      box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.2), 0 2px 4px -1px rgba(16, 185, 129, 0.1);
     }
 
     .primary:hover:not(:disabled) {
       transform: translateY(-1px);
-      box-shadow: 0 6px 12px -1px rgba(79, 70, 229, 0.3), 0 4px 6px -1px rgba(79, 70, 229, 0.15);
+      box-shadow: 0 6px 12px -1px rgba(16, 185, 129, 0.3), 0 4px 6px -1px rgba(16, 185, 129, 0.15);
+      background-color: #059669;
     }
 
     .secondary {
-      background-color: #f3f4f6;
-      color: #374151;
+      background-color: #e2e8f0;
+      color: #334155;
     }
 
     .secondary:hover:not(:disabled) {
-      background-color: #e5e7eb;
+      background-color: #cbd5e1;
+    }
+
+    .dark {
+      background-color: #0f172a;
+      color: white;
+      box-shadow: 0 4px 6px -1px rgba(15, 23, 42, 0.2);
+    }
+
+    .dark:hover:not(:disabled) {
+      transform: translateY(-1px);
+      background-color: #1e293b;
     }
 
     .danger {
@@ -84,7 +96,7 @@ import { CommonModule } from '@angular/common';
 export class CustomButtonComponent {
   @Input() label: string = '';
   @Input() type: 'button' | 'submit' = 'button';
-  @Input() variant: 'primary' | 'secondary' | 'danger' = 'primary';
+  @Input() variant: 'primary' | 'secondary' | 'danger' | 'dark' = 'primary';
   @Input() disabled: boolean = false;
   @Input() loading: boolean = false;
 
