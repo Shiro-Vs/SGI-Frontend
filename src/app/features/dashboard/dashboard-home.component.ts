@@ -3,6 +3,9 @@ import { CommonModule } from '@angular/common';
 import { DashboardService, DashboardResponse } from '../../services/dashboard.service';
 import { AuthService } from '../../services/auth.service';
 import { RouterLink } from '@angular/router';
+import { Chart, registerables } from 'chart.js';
+
+Chart.register(...registerables);
 
 @Component({
   selector: 'app-dashboard-home',
@@ -116,6 +119,35 @@ import { RouterLink } from '@angular/router';
 
         </div>
 
+        <!-- CHARTS GRID -->
+        <div class="charts-grid" *ngIf="userRol === 'ADMIN' || userRol === 'GERENTE' || userRol === 'JEFE_ALMACEN' || userRol === 'VENDEDOR'">
+          
+          <div class="chart-card" *ngIf="userRol === 'ADMIN' || userRol === 'GERENTE' || userRol === 'JEFE_ALMACEN'">
+            <div class="card-header">
+              <h2><i class="bi bi-pie-chart-fill text-primary"></i> 
+                <span *ngIf="userRol === 'ADMIN' || userRol === 'GERENTE'">Distribución Global</span>
+                <span *ngIf="userRol === 'JEFE_ALMACEN'">Entradas vs Transferencias</span>
+              </h2>
+            </div>
+            <div class="card-body chart-container">
+              <canvas id="doughnutChart"></canvas>
+            </div>
+          </div>
+
+          <div class="chart-card">
+            <div class="card-header">
+              <h2><i class="bi bi-bar-chart-fill text-primary"></i> 
+                <span *ngIf="userRol === 'ADMIN' || userRol === 'GERENTE'">Productos Más Vendidos</span>
+                <span *ngIf="userRol === 'VENDEDOR' || userRol === 'JEFE_ALMACEN'">Niveles de Stock</span>
+              </h2>
+            </div>
+            <div class="card-body chart-container">
+              <canvas id="barChart"></canvas>
+            </div>
+          </div>
+
+        </div>
+
         <!-- SECCIÓN DE DETALLES Y TABLAS -->
         <div class="details-grid">
           
@@ -160,53 +192,6 @@ import { RouterLink } from '@angular/router';
             </div>
           </div>
 
-          <!-- Top de Productos (Más Movidos / Mayor Stock / Menor Stock) -->
-          <div class="details-card top-productos-card">
-            <div class="card-header">
-              <h2 *ngIf="userRol === 'ADMIN' || userRol === 'GERENTE'">
-                <i class="bi bi-bar-chart-fill text-primary"></i> Productos con Más Movimientos
-              </h2>
-              <h2 *ngIf="userRol === 'VENDEDOR'">
-                <i class="bi bi-box-seam-fill text-primary"></i> Productos Disponibles (Mayor Stock)
-              </h2>
-              <h2 *ngIf="userRol === 'JEFE_ALMACEN'">
-                <i class="bi bi-arrow-down-up text-primary"></i> Productos Críticos en Almacén (Menor Stock)
-              </h2>
-            </div>
-            
-            <div class="card-body">
-              <div class="table-responsive" *ngIf="data.productosMasMovidos?.length > 0; else noMovimientos">
-                <table class="dashboard-table">
-                  <thead>
-                    <tr>
-                      <th>Producto</th>
-                      <th class="text-right">
-                        <span *ngIf="userRol === 'ADMIN' || userRol === 'GERENTE'">Total Movimientos</span>
-                        <span *ngIf="userRol === 'VENDEDOR' || userRol === 'JEFE_ALMACEN'">Existencia</span>
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr *ngFor="let item of data.productosMasMovidos">
-                      <td><span class="prod-name">{{ item.nombreProducto }}</span></td>
-                      <td class="text-right font-bold">
-                        <span [ngClass]="{'text-success': userRol === 'VENDEDOR', 'text-warning': userRol === 'JEFE_ALMACEN'}">
-                          {{ item.cantidadMovimientos }}
-                        </span>
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-              <ng-template #noMovimientos>
-                <div class="empty-state">
-                  <i class="bi bi-inbox text-muted"></i>
-                  <p>No hay información disponible para este módulo todavía.</p>
-                </div>
-              </ng-template>
-            </div>
-          </div>
-
         </div>
 
       </div>
@@ -216,7 +201,13 @@ import { RouterLink } from '@angular/router';
     .dashboard-home {
       display: flex;
       flex-direction: column;
-      gap: 2rem;
+      gap: 1.5rem;
+    }
+
+    .dashboard-content {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
     }
 
     /* Welcome Banner */
@@ -284,8 +275,8 @@ import { RouterLink } from '@angular/router';
     /* Stats Grid */
     .stats-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 1.5rem;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 1.25rem;
     }
 
     .col-span-full {
@@ -295,11 +286,11 @@ import { RouterLink } from '@angular/router';
     .stat-card {
       background-color: #1e293b;
       border: 1px solid #334155;
-      border-radius: 16px;
-      padding: 1.5rem;
+      border-radius: 12px;
+      padding: 1.25rem;
       display: flex;
       align-items: center;
-      gap: 1.25rem;
+      gap: 1rem;
       transition: transform 0.2s, border-color 0.2s;
       box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
     }
@@ -320,7 +311,6 @@ import { RouterLink } from '@angular/router';
       flex-shrink: 0;
     }
 
-    /* Color gradients for card icons/borders */
     .blue-grad .stat-icon { background: rgba(59, 130, 246, 0.15); color: #60a5fa; }
     .purple-grad .stat-icon { background: rgba(139, 92, 246, 0.15); color: #a78bfa; }
     .emerald-grad .stat-icon { background: rgba(16, 185, 129, 0.15); color: #34d399; }
@@ -353,19 +343,51 @@ import { RouterLink } from '@angular/router';
       color: #64748b;
     }
 
+    /* Charts Grid */
+    .charts-grid {
+      display: grid;
+      grid-template-columns: 1fr 1.8fr;
+      gap: 1.5rem;
+    }
+
+    @media (max-width: 1024px) {
+      .charts-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .chart-card {
+      background-color: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 12px;
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    }
+
+    .chart-container {
+      position: relative;
+      height: 240px;
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-top: 0.5rem;
+    }
+
     /* Details Grid */
     .details-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+      grid-template-columns: 1fr;
       gap: 1.5rem;
-      margin-top: 1.5rem;
     }
 
     .details-card {
       background-color: #1e293b;
       border: 1px solid #334155;
-      border-radius: 16px;
-      padding: 1.5rem;
+      border-radius: 12px;
+      padding: 1.25rem;
       display: flex;
       flex-direction: column;
       box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
@@ -375,7 +397,6 @@ import { RouterLink } from '@angular/router';
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 1.25rem;
       padding-bottom: 0.75rem;
       border-bottom: 1px solid #334155;
     }
@@ -409,10 +430,10 @@ import { RouterLink } from '@angular/router';
       flex-direction: column;
     }
 
-    /* Dashboard Table */
     .table-responsive {
       width: 100%;
       overflow-x: auto;
+      margin-top: 1rem;
     }
 
     .dashboard-table {
@@ -462,7 +483,6 @@ import { RouterLink } from '@angular/router';
     .text-warning { color: #fb923c; }
     .text-muted { color: #64748b; }
 
-    /* Empty/Success States */
     .empty-state {
       display: flex;
       flex-direction: column;
@@ -486,7 +506,6 @@ import { RouterLink } from '@angular/router';
       line-height: 1.4;
     }
 
-    /* Fade-in Animation */
     .animate-fade-in {
       animation: fadeIn 0.4s ease-out forwards;
     }
@@ -508,6 +527,9 @@ export class DashboardHomeComponent implements OnInit {
   loading = true;
   data: DashboardResponse | null = null;
 
+  barChart: any;
+  doughnutChart: any;
+
   ngOnInit() {
     const user = this.authService.getUser();
     if (user) {
@@ -526,11 +548,142 @@ export class DashboardHomeComponent implements OnInit {
         this.data = res;
         this.loading = false;
         this.cdr.detectChanges();
+        
+        // Timeout para que Angular pinte los <canvas> primero
+        setTimeout(() => this.initCharts(), 150);
       },
       error: () => {
         this.loading = false;
         this.cdr.detectChanges();
       }
     });
+  }
+
+  initCharts() {
+    if (!this.data) return;
+
+    if (this.barChart) this.barChart.destroy();
+    if (this.doughnutChart) this.doughnutChart.destroy();
+
+    Chart.defaults.color = '#94a3b8';
+    Chart.defaults.font.family = "'Outfit', 'Inter', sans-serif";
+    Chart.defaults.borderColor = 'rgba(51, 65, 85, 0.5)';
+
+    // 1. Doughnut Chart
+    const doughnutCanvas = document.getElementById('doughnutChart') as HTMLCanvasElement;
+    if (doughnutCanvas) {
+      let labels: string[] = [];
+      let chartData: number[] = [];
+      let backgroundColors: string[] = [];
+
+      if (this.userRol === 'ADMIN' || this.userRol === 'GERENTE') {
+        labels = ['Entradas', 'Salidas', 'Transferencias'];
+        chartData = [this.data.totalEntradas || 0, this.data.totalSalidas || 0, this.data.totalTransferencias || 0];
+        backgroundColors = ['#34d399', '#fb923c', '#818cf8'];
+      } else if (this.userRol === 'JEFE_ALMACEN') {
+        labels = ['Entradas', 'Transferencias Enviadas'];
+        chartData = [this.data.totalEntradas || 0, this.data.totalTransferencias || 0];
+        backgroundColors = ['#34d399', '#818cf8'];
+      }
+
+      if (chartData.some(d => d > 0)) {
+        this.doughnutChart = new Chart(doughnutCanvas, {
+          type: 'doughnut',
+          data: {
+            labels: labels,
+            datasets: [{
+              data: chartData,
+              backgroundColor: backgroundColors,
+              borderWidth: 0,
+              hoverOffset: 6
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { position: 'right', labels: { padding: 20, color: '#e2e8f0', usePointStyle: true } }
+            },
+            cutout: '75%'
+          }
+        });
+      } else {
+         doughnutCanvas.parentElement!.innerHTML = '<div class="empty-state"><i class="bi bi-pie-chart text-muted"></i><p>Sin datos para graficar</p></div>';
+      }
+    }
+
+    // 2. Bar Chart
+    const barCanvas = document.getElementById('barChart') as HTMLCanvasElement;
+    if (barCanvas && this.data.productosMasMovidos && this.data.productosMasMovidos.length > 0) {
+      const labels = this.data.productosMasMovidos.map((p: any) => p.nombreProducto);
+      const chartData = this.data.productosMasMovidos.map((p: any) => p.cantidadMovimientos);
+      
+      let labelText = 'Ventas Totales';
+      let bgColor = 'rgba(59, 130, 246, 0.7)';
+      let borderColor = '#3b82f6'; 
+
+      if (this.userRol === 'VENDEDOR') {
+        labelText = 'Stock Disponible';
+        bgColor = 'rgba(16, 185, 129, 0.7)';
+        borderColor = '#34d399';
+      } else if (this.userRol === 'JEFE_ALMACEN') {
+        labelText = 'Stock Crítico';
+        bgColor = 'rgba(249, 115, 22, 0.7)';
+        borderColor = '#fb923c';
+      }
+
+      this.barChart = new Chart(barCanvas, {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: labelText,
+            data: chartData,
+            backgroundColor: bgColor,
+            borderColor: borderColor,
+            borderWidth: 1,
+            borderRadius: 6,
+            maxBarThickness: 45
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: 'rgba(15, 23, 42, 0.9)',
+              titleColor: '#fff',
+              bodyColor: '#cbd5e1',
+              padding: 10,
+              cornerRadius: 8,
+              displayColors: false
+            }
+          },
+          scales: {
+            y: { 
+              beginAtZero: true, 
+              grid: { color: 'rgba(51, 65, 85, 0.3)' },
+              ticks: { color: '#94a3b8', stepSize: 1 }
+            },
+            x: { 
+              grid: { display: false },
+              ticks: { 
+                color: '#94a3b8', 
+                maxRotation: 45, 
+                minRotation: 45,
+                callback: function(value, index, values) {
+                  const label = labels[index];
+                  // Truncate long labels
+                  return label.length > 15 ? label.substring(0, 15) + '...' : label;
+                }
+              }
+            }
+          }
+        }
+      });
+    } else if (barCanvas) {
+       barCanvas.parentElement!.innerHTML = '<div class="empty-state"><i class="bi bi-bar-chart text-muted"></i><p>Sin datos para graficar</p></div>';
+    }
   }
 }
