@@ -121,7 +121,7 @@ import Swal from 'sweetalert2';
           </div>
 
           <div class="form-actions">
-            <a routerLink="/dashboard" class="btn-secondary" [class.disabled]="loading">
+            <a routerLink="/movimientos/historial" class="btn-secondary" [class.disabled]="loading">
               Cancelar
             </a>
             <app-custom-button
@@ -357,18 +357,33 @@ export class MovimientoTransferenciaComponent implements OnInit {
     this.movimientoService.registrarTransferencia(body).subscribe({
       next: () => {
         this.loading = false;
+        this.cdr.detectChanges();
+
         Swal.fire({
           title: '¡Operación exitosa!',
           text: 'Transferencia registrada correctamente.',
           icon: 'success',
           confirmButtonText: 'Aceptar'
         }).then(() => {
-          this.router.navigate(['/dashboard/productos']);
+          this.router.navigate(['/movimientos/historial']);
         });
       },
       error: (err) => {
-        this.error = err.error?.message || 'Error al registrar la transferencia. Verifique si la sucursal de origen tiene stock suficiente.';
         this.loading = false;
+        this.cdr.detectChanges(); // <-- ESTO APAGA EL SPINNER EN CASO DE ERROR
+
+        // Extraemos el mensaje exacto que tu backend mandó (ej. "Stock insuficiente...")
+        const mensajeError = err.error?.message || 'No se pudo realizar la transferencia. Verifique el stock disponible.';
+        
+        // Mostramos el error en pantalla con SweetAlert
+        Swal.fire({
+          title: 'Operación denegada',
+          text: mensajeError,
+          icon: 'warning',
+          confirmButtonText: 'Entendido'
+        }).then(() => {
+          this.router.navigate(['/movimientos/historial']);
+        });
       }
     });
   }
