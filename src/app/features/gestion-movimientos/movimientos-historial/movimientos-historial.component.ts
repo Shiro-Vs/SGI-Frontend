@@ -2,17 +2,23 @@ import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MovimientoService } from '../../../services/movimiento.service';
 import { Movimiento } from '../../../core/models/movimiento.model';
+import { RouterModule } from '@angular/router';
 
 @Component({
   selector: 'app-movimientos-historial',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, RouterModule],
   template: `
     <div class="movement-history-container">
       <div class="list-header">
         <div>
           <h2>Historial de Movimientos</h2>
           <p class="subtitle">Consulte todas las transacciones de stock (Entradas, Salidas y Transferencias) realizadas en el sistema.</p>
+        </div>
+        <div class="header-actions">
+           <button routerLink="../entrada" class="btn btn-success">+ Entrada</button>
+           <button routerLink="../salida" class="btn btn-danger">- Salida</button>
+           <button routerLink="../transferencia" class="btn btn-primary">➔ Transferencia</button>
         </div>
       </div>
 
@@ -79,6 +85,32 @@ import { Movimiento } from '../../../core/models/movimiento.model';
       font-size: 1.5rem;
       color: #f8fafc;
     }
+
+    .list-header {
+      display: flex;
+      justify-content: space-between; /* Alinea los textos a la izq y botones a la der */
+      align-items: center;
+    }
+
+    /* NUEVO: Estilos para los botones */
+    .header-actions {
+      display: flex;
+      gap: 0.75rem;
+    }
+
+    .btn {
+      padding: 0.5rem 1rem;
+      border: none;
+      border-radius: 6px;
+      font-weight: 600;
+      cursor: pointer;
+      color: white;
+      transition: opacity 0.2s;
+    }
+    .btn:hover { opacity: 0.9; }
+    .btn-success { background-color: #10b981; }
+    .btn-danger { background-color: #ef4444; }
+    .btn-primary { background-color: #3b82f6; }
 
     .subtitle {
       margin: 0.25rem 0 0 0;
