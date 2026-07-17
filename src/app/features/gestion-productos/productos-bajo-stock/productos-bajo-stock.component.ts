@@ -1,15 +1,16 @@
-import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ProductoService } from '../../../services/producto.service';
 import { Producto } from '../../../core/models/producto.model';
 import { EstadoPipe } from '../../../shared/pipes/estado.pipe';
 
 @Component({
+  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'app-productos-bajo-stock',
   standalone: true,
   imports: [CommonModule, EstadoPipe],
   template: `
-    <div class="product-list-container">
+    <div class="product-list-container animate-fade-in">
       <div class="list-header">
         <div>
           <h2>Alerta de Stock Bajo</h2>
@@ -41,7 +42,7 @@ import { EstadoPipe } from '../../../shared/pipes/estado.pipe';
               </tr>
             </thead>
             <tbody>
-              <tr *ngFor="let p of productos">
+              <tr *ngFor="let p of productos; trackBy: trackByProductoId">
                 <td class="bold-text code-font">{{ p.sku }}</td>
                 <td class="bold-text">{{ p.nombre }}</td>
                 <td>
@@ -136,6 +137,14 @@ import { EstadoPipe } from '../../../shared/pipes/estado.pipe';
       color: #f8fafc;
     }
 
+    .product-table tbody tr {
+      transition: background-color 0.15s ease;
+    }
+
+    .product-table tbody tr:hover {
+      background-color: rgba(51, 65, 85, 0.35);
+    }
+
     .bold-text {
       font-weight: 600;
       color: #f8fafc;
@@ -206,5 +215,9 @@ export class ProductosBajoStockComponent implements OnInit {
       return p.categoria.nombre;
     }
     return (p.categoria as string) || '-';
+  }
+
+  trackByProductoId(index: number, p: Producto): number | undefined {
+    return p.id;
   }
 }

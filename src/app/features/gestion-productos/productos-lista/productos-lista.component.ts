@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { ProductoService } from '../../../services/producto.service';
@@ -12,11 +12,12 @@ import { ProductoFormularioComponent } from '../producto-formulario/producto-for
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 
 @Component({
+  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'app-productos-lista',
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, EstadoPipe, ModalComponent, ConfirmModalComponent, ProductoFormularioComponent],
   template: `
-    <div class="product-list-container">
+    <div class="product-list-container animate-fade-in">
       <div class="list-header">
         <div>
           <h2>Gestión de Productos</h2>
@@ -76,7 +77,7 @@ import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
               </tr>
             </thead>
             <tbody>
-              <tr *ngFor="let p of productos">
+              <tr *ngFor="let p of productos; trackBy: trackByProductoId">
                 <td class="bold-text code-font">{{ p.sku }}</td>
                 <td class="bold-text">{{ p.nombre }}</td>
                 <td>{{ p.descripcion || '-' }}</td>
@@ -282,6 +283,14 @@ import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
       padding: 1rem 1.5rem;
       border-bottom: 1px solid #334155;
       color: #f8fafc;
+    }
+
+    .product-table tbody tr {
+      transition: background-color 0.15s ease;
+    }
+
+    .product-table tbody tr:hover {
+      background-color: rgba(51, 65, 85, 0.35);
     }
 
     .bold-text {
@@ -490,5 +499,9 @@ export class ProductosListaComponent implements OnInit {
   getCategoryName(p: Producto): string {
     if (p.categoria && typeof p.categoria === 'object') return p.categoria.nombre;
     return (p.categoria as string) || '-';
+  }
+
+  trackByProductoId(index: number, p: Producto): number | undefined {
+    return p.id;
   }
 }

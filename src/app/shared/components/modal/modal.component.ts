@@ -32,6 +32,7 @@ import { CommonModule } from '@angular/common';
       justify-content: center;
       align-items: center;
       z-index: 1000;
+      animation: overlayFadeIn 0.15s ease-out;
     }
 
     .modal-container {
@@ -43,6 +44,17 @@ import { CommonModule } from '@angular/common';
       flex-direction: column;
       max-height: 90vh;
       border: 1px solid #334155;
+      animation: modalPopIn 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    @keyframes overlayFadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes modalPopIn {
+      from { opacity: 0; transform: scale(0.96) translateY(8px); }
+      to { opacity: 1; transform: scale(1) translateY(0); }
     }
 
     .modal-header {

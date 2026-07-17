@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { MantenimientoService } from '../../../../services/mantenimiento.service';
 import { CustomButtonComponent } from '../../../../shared/components/custom-button/custom-button.component';
-import Swal from 'sweetalert2';
+import { AppSwal as Swal } from '../../../../shared/utils/swal-theme';
 
 @Component({
   selector: 'app-formulario-categoria',

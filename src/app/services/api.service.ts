@@ -14,7 +14,6 @@ export class ApiService {
   private baseUrl = environment.apiUrl;
 
   get<T>(path: string, params: any = {}): Observable<T> {
-    console.log('ApiService: GET request to path:', path, 'params:', params);
     let httpParams = new HttpParams();
     Object.keys(params).forEach(key => {
       if (params[key] !== undefined && params[key] !== null) {
@@ -25,17 +24,14 @@ export class ApiService {
   }
 
   post<T>(path: string, body: any): Observable<T> {
-    console.log('ApiService: POST request to path:', path, 'body:', body);
     return this.http.post<T>(`${this.baseUrl}/${path}`, body);
   }
 
   put<T>(path: string, body: any): Observable<T> {
-    console.log('ApiService: PUT request to path:', path, 'body:', body);
     return this.http.put<T>(`${this.baseUrl}/${path}`, body);
   }
 
   delete<T>(path: string): Observable<T> {
-    console.log('ApiService: DELETE request to path:', path);
     return this.http.delete<T>(`${this.baseUrl}/${path}`);
   }
 }

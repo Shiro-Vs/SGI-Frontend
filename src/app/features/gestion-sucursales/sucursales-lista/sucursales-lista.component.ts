@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { MantenimientoService } from '../../../services/mantenimiento.service';
@@ -11,11 +11,12 @@ import { ConfirmModalComponent } from '../../../shared/components/confirm-modal/
 import { FormularioSucursalComponent } from '../components/formulario-sucursal/formulario-sucursal.component';
 
 @Component({
+  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'app-sucursales-lista',
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, EstadoPipe, ModalComponent, ConfirmModalComponent, FormularioSucursalComponent],
   template: `
-    <div class="sucursal-layout">
+    <div class="sucursal-layout animate-fade-in">
       <!-- Tabla de Sucursales -->
       <div class="list-section full-width">
         <div class="list-header">
@@ -51,7 +52,7 @@ import { FormularioSucursalComponent } from '../components/formulario-sucursal/f
               </tr>
             </thead>
             <tbody>
-              <tr *ngFor="let s of sucursales">
+              <tr *ngFor="let s of sucursales; trackBy: trackBySucursalId">
                 <td>{{ s.id }}</td>
                 <td class="bold-text">{{ s.nombre }}</td>
                 <td>{{ s.direccion }}</td>
@@ -186,6 +187,14 @@ import { FormularioSucursalComponent } from '../components/formulario-sucursal/f
       padding: 1rem 1.5rem;
       border-bottom: 1px solid #334155;
       color: #f8fafc;
+    }
+
+    .sucursal-table tbody tr {
+      transition: background-color 0.15s ease;
+    }
+
+    .sucursal-table tbody tr:hover {
+      background-color: rgba(51, 65, 85, 0.35);
     }
 
     .bold-text {
@@ -439,5 +448,9 @@ export class SucursalesListaComponent implements OnInit {
         this.cargarSucursales();
       }
     });
+  }
+
+  trackBySucursalId(index: number, s: any): number {
+    return s.id;
   }
 }

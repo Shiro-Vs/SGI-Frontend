@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MantenimientoService } from '../../../services/mantenimiento.service';
 import { AuthService } from '../../../services/auth.service';
@@ -9,11 +9,12 @@ import { ConfirmModalComponent } from '../../../shared/components/confirm-modal/
 import { FormularioCategoriaComponent } from '../components/formulario-categoria/formulario-categoria.component';
 
 @Component({
+  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'app-categorias-lista',
   standalone: true,
   imports: [CommonModule, EstadoPipe, ModalComponent, ConfirmModalComponent, FormularioCategoriaComponent],
   template: `
-    <div class="category-layout">
+    <div class="category-layout animate-fade-in">
       <div class="list-section full-width">
         <div class="list-header">
           <div>
@@ -47,7 +48,7 @@ import { FormularioCategoriaComponent } from '../components/formulario-categoria
               </tr>
             </thead>
             <tbody>
-              <tr *ngFor="let c of categorias">
+              <tr *ngFor="let c of categorias; trackBy: trackByCategoriaId">
                 <td>{{ c.id }}</td>
                 <td class="bold-text">{{ c.nombre }}</td>
                 <td>{{ c.descripcion || '-' }}</td>
@@ -174,6 +175,14 @@ import { FormularioCategoriaComponent } from '../components/formulario-categoria
       padding: 1rem 1.5rem;
       border-bottom: 1px solid #334155;
       color: #f8fafc;
+    }
+
+    .category-table tbody tr {
+      transition: background-color 0.15s ease;
+    }
+
+    .category-table tbody tr:hover {
+      background-color: rgba(51, 65, 85, 0.35);
     }
 
     .bold-text {
@@ -423,5 +432,9 @@ export class CategoriasListaComponent implements OnInit {
         this.cargarCategorias();
       }
     });
+  }
+
+  trackByCategoriaId(index: number, c: any): number {
+    return c.id;
   }
 }

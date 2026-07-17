@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { ApiService } from '../../../services/api.service';
@@ -9,11 +9,12 @@ import { ConfirmModalComponent } from '../../../shared/components/confirm-modal/
 import { FormularioUsuarioComponent } from '../components/formulario-usuario/formulario-usuario.component';
 
 @Component({
+  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'app-usuarios-lista',
   standalone: true,
   imports: [CommonModule, RouterLink, EstadoPipe, ModalComponent, ConfirmModalComponent, FormularioUsuarioComponent],
   template: `
-    <div class="user-list-container">
+    <div class="user-list-container animate-fade-in">
       <div class="list-header">
         <div>
           <h2>Gestión de Usuarios</h2>
@@ -48,9 +49,12 @@ import { FormularioUsuarioComponent } from '../components/formulario-usuario/for
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let u of usuarios">
+            <tr *ngFor="let u of usuarios; trackBy: trackByUsuarioId">
               <td>{{ u.id }}</td>
-              <td class="bold-text">{{ u.nombre }}{{ u.apellido ? ' ' + u.apellido : '' }}</td>
+              <td class="bold-text name-cell">
+                <span class="avatar-role" [ngClass]="getRoleClass(u.rol || u.rolId)">{{ (u.nombre || '?').charAt(0) | uppercase }}</span>
+                {{ u.nombre }}{{ u.apellido ? ' ' + u.apellido : '' }}
+              </td>
               <td>{{ u.correo }}</td>
               <td><span class="role-badge" [ngClass]="getRoleClass(u.rol || u.rolId)">{{ u.rol || u.rolId }}</span></td>
               <td>{{ u.sucursal || u.sucursalId || '-' }}</td>
@@ -174,6 +178,14 @@ import { FormularioUsuarioComponent } from '../components/formulario-usuario/for
       color: #f8fafc;
     }
 
+    .user-table tbody tr {
+      transition: background-color 0.15s ease;
+    }
+
+    .user-table tbody tr:hover {
+      background-color: rgba(51, 65, 85, 0.35);
+    }
+
     .bold-text {
       font-weight: 600;
       color: #f8fafc;
@@ -207,6 +219,48 @@ import { FormularioUsuarioComponent } from '../components/formulario-usuario/for
     }
 
     .role-badge.default {
+      background-color: rgba(148, 163, 184, 0.2);
+      color: #cbd5e1;
+      border: 1px solid rgba(148, 163, 184, 0.3);
+    }
+
+    .name-cell {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+
+    .avatar-role {
+      width: 28px;
+      height: 28px;
+      flex-shrink: 0;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      font-weight: 700;
+    }
+
+    .avatar-role.admin {
+      background-color: rgba(168, 85, 247, 0.2);
+      color: #d8b4fe;
+      border: 1px solid rgba(168, 85, 247, 0.3);
+    }
+
+    .avatar-role.vendedor {
+      background-color: rgba(59, 130, 246, 0.2);
+      color: #93c5fd;
+      border: 1px solid rgba(59, 130, 246, 0.3);
+    }
+
+    .avatar-role.jefe-almacen {
+      background-color: rgba(245, 158, 11, 0.2);
+      color: #fcd34d;
+      border: 1px solid rgba(245, 158, 11, 0.3);
+    }
+
+    .avatar-role.default {
       background-color: rgba(148, 163, 184, 0.2);
       color: #cbd5e1;
       border: 1px solid rgba(148, 163, 184, 0.3);
@@ -290,25 +344,22 @@ export class UsuariosListaComponent implements OnInit {
 
   cargarUsuarios() {
     this.loading = true;
-    console.log('UsuariosListaComponent: initiating cargarUsuarios...');
     this.apiService.get<Usuario[]>('usuarios').subscribe({
       next: (data) => {
-        console.log('UsuariosListaComponent: success loading usuarios! data:', data);
         this.usuarios = data;
         this.loading = false;
         this.cdr.detectChanges();
       },
       error: (err) => {
         console.error('UsuariosListaComponent: failed loading usuarios! error:', err);
-        this.usuarios = [
-          { id: 1, correo: 'admin@utp.edu.pe', nombre: 'Juan', apellido: 'Pérez', rolId: 1, sucursalId: 1, activo: true },
-          { id: 2, correo: 'mflores@utp.edu.pe', nombre: 'María', apellido: 'Flores', rolId: 2, sucursalId: 1, activo: true },
-          { id: 3, correo: 'jquispe@utp.edu.pe', nombre: 'Jorge', apellido: 'Quispe', rolId: 2, sucursalId: 2, activo: false }
-        ];
         this.loading = false;
         this.cdr.detectChanges();
       }
     });
+  }
+
+  trackByUsuarioId(index: number, usuario: Usuario): number | undefined {
+    return usuario.id;
   }
 
   abrirModalCrear() {

@@ -8,8 +8,6 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const authService = inject(AuthService);
   const token = authService.getToken();
 
-  console.log('Interceptor: intercepting request:', req.method, req.url, 'Token exists:', !!token);
-
   if (token) {
     req = req.clone({
       setHeaders: {

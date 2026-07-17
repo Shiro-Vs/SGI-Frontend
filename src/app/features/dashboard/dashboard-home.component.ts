@@ -15,7 +15,7 @@ Chart.register(...registerables);
       <!-- Welcome Banner -->
       <div class="welcome-banner">
         <div class="welcome-info">
-          <h1>¡Hola, {{ userName }}!</h1>
+          <h1>{{ saludo }}, {{ userName }}! <span class="wave">👋</span></h1>
           <p>Bienvenido al Sistema de Gestión Interna. Aquí tienes el resumen de tu sucursal y actividades.</p>
         </div>
         <div class="role-badge">
@@ -229,6 +229,20 @@ Chart.register(...registerables);
       font-size: 1.75rem;
       font-weight: 700;
       color: #f8fafc;
+    }
+
+    .welcome-info .wave {
+      display: inline-block;
+      animation: wave 2s ease-in-out infinite;
+      transform-origin: 70% 70%;
+    }
+
+    @keyframes wave {
+      0%, 60%, 100% { transform: rotate(0deg); }
+      10%, 30% { transform: rotate(14deg); }
+      20% { transform: rotate(-8deg); }
+      40% { transform: rotate(-4deg); }
+      50% { transform: rotate(10deg); }
     }
 
     .welcome-info p {
@@ -458,6 +472,14 @@ Chart.register(...registerables);
       vertical-align: middle;
     }
 
+    .dashboard-table tbody tr {
+      transition: background-color 0.15s ease;
+    }
+
+    .dashboard-table tbody tr:hover {
+      background-color: rgba(51, 65, 85, 0.35);
+    }
+
     .dashboard-table tr:last-child td {
       border-bottom: none;
     }
@@ -525,9 +547,17 @@ export class DashboardHomeComponent implements OnInit {
   userSucursal = '';
   loading = true;
   data: DashboardResponse | null = null;
+  saludo = this.getSaludoPorHora();
 
   barChart: any;
   doughnutChart: any;
+
+  private getSaludoPorHora(): string {
+    const hora = new Date().getHours();
+    if (hora < 12) return '¡Buenos días';
+    if (hora < 19) return '¡Buenas tardes';
+    return '¡Buenas noches';
+  }
 
   ngOnInit() {
     const user = this.authService.getUser();
