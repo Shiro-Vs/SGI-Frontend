@@ -1,15 +1,16 @@
-import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MovimientoService } from '../../../services/movimiento.service';
 import { Movimiento } from '../../../core/models/movimiento.model';
 import { RouterModule } from '@angular/router';
 
 @Component({
+  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'app-movimientos-historial',
   standalone: true,
   imports: [CommonModule, RouterModule],
   template: `
-    <div class="movement-history-container">
+    <div class="movement-history-container animate-fade-in">
       <div class="list-header">
         <div>
           <h2>Historial de Movimientos</h2>
@@ -46,7 +47,7 @@ import { RouterModule } from '@angular/router';
               </tr>
             </thead>
             <tbody>
-              <tr *ngFor="let m of movimientos">
+              <tr *ngFor="let m of movimientos; trackBy: trackByMovimientoId">
                 <td>{{ m.id }}</td>
                 <td class="bold-text">{{ m.fecha | date:'dd/MM/yyyy HH:mm' }}</td>
                 <td>
@@ -159,6 +160,14 @@ import { RouterModule } from '@angular/router';
       color: #f8fafc;
     }
 
+    .movement-table tbody tr {
+      transition: background-color 0.15s ease;
+    }
+
+    .movement-table tbody tr:hover {
+      background-color: rgba(51, 65, 85, 0.35);
+    }
+
     .bold-text {
       font-weight: 600;
       color: #f8fafc;
@@ -255,5 +264,9 @@ export class MovimientosHistorialComponent implements OnInit {
       return m.producto.nombre;
     }
     return m.producto || '-';
+  }
+
+  trackByMovimientoId(index: number, m: any): number {
+    return m.id;
   }
 }

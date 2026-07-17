@@ -1,7 +1,18 @@
-import { Component, inject } from '@angular/core';
+import { Component, DestroyRef, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
-import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
+import { Router, NavigationEnd, RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
+import { filter } from 'rxjs/operators';
 import { AuthService } from '../../services/auth.service';
+
+const SECTION_TITLES: Record<string, string> = {
+  home: 'Resumen',
+  usuarios: 'Gestión de Usuarios',
+  sucursales: 'Gestión de Sucursales',
+  categorias: 'Gestión de Categorías',
+  productos: 'Gestión de Productos',
+  movimientos: 'Movimientos de Stock'
+};
 
 @Component({
   selector: 'app-dashboard',
@@ -120,7 +131,7 @@ import { AuthService } from '../../services/auth.service';
         <!-- Top Navbar -->
         <header class="navbar">
           <div class="navbar-title">
-            <h2>Sistema de Gestión Interna</h2>
+            <h2>{{ pageTitle }}</h2>
           </div>
           <div class="navbar-actions">
             <div class="status-indicator">
@@ -442,9 +453,25 @@ import { AuthService } from '../../services/auth.service';
 })
 export class DashboardComponent {
   private authService = inject(AuthService);
+  private router = inject(Router);
+  private destroyRef = inject(DestroyRef);
   currentUser = this.authService.getUser();
   role = this.authService.getRole();
   isSidebarCollapsed = false;
+  pageTitle = 'Sistema de Gestión Interna';
+
+  constructor() {
+    this.updatePageTitle(this.router.url);
+    this.router.events.pipe(
+      filter((event): event is NavigationEnd => event instanceof NavigationEnd),
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe(event => this.updatePageTitle(event.urlAfterRedirects));
+  }
+
+  private updatePageTitle(url: string) {
+    const section = url.split('/').filter(Boolean)[1] || 'home';
+    this.pageTitle = SECTION_TITLES[section] || 'Sistema de Gestión Interna';
+  }
 
   toggleSidebar() {
     this.isSidebarCollapsed = !this.isSidebarCollapsed;

@@ -9,7 +9,7 @@ import { AuthService } from '../../../services/auth.service';
 import { Producto } from '../../../core/models/producto.model';
 import { Sucursal } from '../../../core/models/sucursal.model';
 import { CustomButtonComponent } from '../../../shared/components/custom-button/custom-button.component';
-import Swal from 'sweetalert2';
+import { AppSwal as Swal } from '../../../shared/utils/swal-theme';
 
 @Component({
   selector: 'app-movimiento-salida',

@@ -36,14 +36,25 @@ import { CustomButtonComponent } from '../../../shared/components/custom-button/
 
           <div class="form-group">
             <label for="password">Contraseña</label>
-            <input
-              type="password"
-              id="password"
-              formControlName="password"
-              placeholder="Ingrese su contraseña"
-              class="form-control"
-              [ngClass]="{ 'is-invalid': submitted && f['password'].errors }"
-            />
+            <div class="password-wrapper">
+              <input
+                [type]="showPassword ? 'text' : 'password'"
+                id="password"
+                formControlName="password"
+                placeholder="Ingrese su contraseña"
+                class="form-control"
+                [ngClass]="{ 'is-invalid': submitted && f['password'].errors }"
+              />
+              <button
+                type="button"
+                class="toggle-password-btn"
+                (click)="showPassword = !showPassword"
+                [attr.aria-label]="showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+                tabindex="-1"
+              >
+                <i class="bi" [ngClass]="showPassword ? 'bi-eye-slash' : 'bi-eye'"></i>
+              </button>
+            </div>
             <div *ngIf="submitted && f['password'].errors" class="invalid-feedback">
               La contraseña es requerida.
             </div>
@@ -138,6 +149,34 @@ import { CustomButtonComponent } from '../../../shared/components/custom-button/
       border-color: #ef4444;
     }
 
+    .password-wrapper {
+      position: relative;
+    }
+
+    .password-wrapper .form-control {
+      padding-right: 2.75rem;
+    }
+
+    .toggle-password-btn {
+      position: absolute;
+      top: 50%;
+      right: 0.75rem;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      color: #94a3b8;
+      cursor: pointer;
+      font-size: 1.1rem;
+      padding: 0.25rem;
+      display: flex;
+      align-items: center;
+      transition: color 0.2s;
+    }
+
+    .toggle-password-btn:hover {
+      color: #cbd5e1;
+    }
+
     .invalid-feedback {
       color: #f87171;
       font-size: 0.75rem;
@@ -169,6 +208,7 @@ export class LoginComponent {
   loading = false;
   submitted = false;
   error = '';
+  showPassword = false;
 
   get f() {
     return this.loginForm.controls;
