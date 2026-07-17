@@ -2,6 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable, tap } from 'rxjs';
 import { Router } from '@angular/router';
+import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
@@ -11,7 +12,7 @@ export class AuthService {
   private router = inject(Router);
   
   // URL base apuntando al backend Spring Boot
-  private apiUrl = 'http://localhost:8081/api/auth';
+  private apiUrl = `${environment.apiUrl}/auth`;
   
   private tokenKey = 'sgi_token';
   private userSubject = new BehaviorSubject<any>(null);

@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
@@ -9,7 +10,8 @@ export class ApiService {
   private http = inject(HttpClient);
   
   // URL base configurable del backend Spring Boot
-  private baseUrl = 'http://localhost:8081/api';
+  // Ahora Angular decidirá qué URL usar dependiendo de dónde esté corriendo
+  private baseUrl = environment.apiUrl;
 
   get<T>(path: string, params: any = {}): Observable<T> {
     console.log('ApiService: GET request to path:', path, 'params:', params);
